@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "InterviewAI",
+    "name": "Crackd",
     "slug": "InterviewAI",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,6 +10,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.abhipkr.interviewai",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -19,6 +20,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "65af80dc-7350-471e-a139-21aead1be6b7"
+      }
+    },
+    "owner": "abhipkr",
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }
