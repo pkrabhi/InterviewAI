@@ -14,3 +14,6 @@ web-build/
 
 # Java backend build output
 backend/target/
+
+# Local dev config with real secrets — NEVER commit this
+backend/src/main/resources/application-local.properties
