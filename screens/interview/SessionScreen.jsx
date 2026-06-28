@@ -5,10 +5,15 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from 'expo-speech-recognition';
 import { COLORS, SPACING, RADIUS } from '../../constants/theme';
 import MessageBubble    from '../../components/MessageBubble';
 import TypingIndicator  from '../../components/TypingIndicator';
 import HintPanel        from '../../components/HintPanel';
+import VoiceModal       from '../../components/VoiceModal';
 import useInterviewStore from '../../store/useInterviewStore';
 import { startSession, sendMessage, endSession, getSessionMessages } from '../../services/interviewService';
 
@@ -48,16 +53,30 @@ const stopSpeaking = () => {
 
 // ── Main component ────────────────────────────────────────────────────
 export default function SessionScreen({ route, navigation }) {
-  const { role, level, type, jdText, resumeSessionId } = route.params || {};
+  const { role, level, type, jdText, resumeSummary, resumeSessionId } = route.params || {};
 
-  const [inputText, setInputText]     = useState('');
-  const [timer, setTimer]             = useState(0);
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking]   = useState(false);
+  const [inputText, setInputText]       = useState('');
+  const [timer, setTimer]               = useState(0);
+  const [isListening, setIsListening]   = useState(false);
+  const [isSpeaking, setIsSpeaking]     = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [voiceModalVisible, setVoiceModalVisible] = useState(false);
+  const [voiceTranscript, setVoiceTranscript]     = useState('');
   const flatListRef  = useRef(null);
   const recognitionRef = useRef(null);
   const pulseAnim    = useRef(new Animated.Value(1)).current;
+
+  // expo-speech-recognition events
+  useSpeechRecognitionEvent('result', (event) => {
+    const text = event.results?.[0]?.transcript || '';
+    setVoiceTranscript(text);
+  });
+  useSpeechRecognitionEvent('end', () => {
+    setIsListening(false);
+  });
+  useSpeechRecognitionEvent('error', () => {
+    setIsListening(false);
+  });
 
   const {
     sessionId, messages, isTyping, isComplete,
@@ -84,7 +103,7 @@ export default function SessionScreen({ route, navigation }) {
     const interval = setInterval(() => setTimer((t) => t + 1), 1000);
     return () => {
       clearInterval(interval);
-      stopListening();
+      stopVoiceRecording();
       stopSpeaking();
     };
   }, []);
@@ -121,6 +140,7 @@ export default function SessionScreen({ route, navigation }) {
           level:         level || 'Mid',
           interviewType: type?.id || 'technical',
           jdText:        jdText || '',
+          resumeSummary: resumeSummary || '',
         });
         setSessionId(response.sessionId);
         addMessage({ role: 'interviewer', content: response.openingMessage });
@@ -151,23 +171,25 @@ export default function SessionScreen({ route, navigation }) {
   };
 
   // ── Speech recognition ───────────────────────────────────────────
-  const startListening = async () => {
+  const openVoiceModal = async () => {
     stopSpeaking();
+    setVoiceTranscript('');
+    setVoiceModalVisible(true);
 
     if (Platform.OS === 'web') {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) { Alert.alert('Not supported', 'Voice input is only supported in Chrome.'); return; }
+      if (!SR) { Alert.alert('Not supported', 'Use Chrome for voice input on web.'); return; }
       const recognition = new SR();
       recognition.lang = 'en-IN';
       recognition.interimResults = true;
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognitionRef.current = recognition;
       recognition.onresult = (event) => {
         let transcript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
           transcript += event.results[i][0].transcript;
         }
-        setInputText(transcript);
+        setVoiceTranscript(transcript);
       };
       recognition.onend = () => setIsListening(false);
       recognition.onerror = () => setIsListening(false);
@@ -176,31 +198,42 @@ export default function SessionScreen({ route, navigation }) {
       return;
     }
 
-    // Android: voice input not yet supported, prompt to type
-    Alert.alert('Voice Input', 'Voice-to-text is coming soon for Android. Please type your answer.');
-    return;
-  };
-
-  const stopListening = async () => {
-    if (Platform.OS === 'web') {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-        recognitionRef.current = null;
-      }
-      setIsListening(false);
+    // Android: use expo-speech-recognition
+    const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!granted) {
+      Alert.alert('Permission required', 'Microphone permission is needed for voice input.');
+      setVoiceModalVisible(false);
       return;
     }
+    ExpoSpeechRecognitionModule.start({ lang: 'en-IN', interimResults: true, continuous: false });
+    setIsListening(true);
+  };
 
+  const stopVoiceRecording = () => {
+    if (Platform.OS === 'web') {
+      if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
+    } else {
+      ExpoSpeechRecognitionModule.stop();
+    }
     setIsListening(false);
   };
 
-  const toggleMic = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
+  const handleVoiceSend = () => {
+    if (voiceTranscript.trim()) {
+      setInputText(voiceTranscript.trim());
     }
+    setVoiceModalVisible(false);
+    setVoiceTranscript('');
+    setIsListening(false);
   };
+
+  const handleVoiceCancel = () => {
+    stopVoiceRecording();
+    setVoiceModalVisible(false);
+    setVoiceTranscript('');
+  };
+
+  const toggleMic = () => openVoiceModal();
 
   const toggleVoice = () => {
     if (isSpeaking) stopSpeaking();
@@ -304,6 +337,15 @@ export default function SessionScreen({ route, navigation }) {
           <MaterialCommunityIcons name="arrow-right" size={18} color={COLORS.text} />
         </TouchableOpacity>
       )}
+
+      {/* Voice modal */}
+      <VoiceModal
+        visible={voiceModalVisible}
+        transcript={voiceTranscript}
+        onStop={stopVoiceRecording}
+        onSend={handleVoiceSend}
+        onCancel={handleVoiceCancel}
+      />
 
       {/* Input area */}
       {!isComplete && (

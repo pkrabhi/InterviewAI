@@ -1,11 +1,12 @@
 import api from './api';
 
-export const startSession = async ({ role, level, interviewType, jdText }) => {
+export const startSession = async ({ role, level, interviewType, jdText, resumeSummary }) => {
   const response = await api.post('/api/interview/start', {
     role,
     level,
     interviewType,
     jdText: jdText || '',
+    resumeSummary: resumeSummary || '',
   });
   return response.data;
 };
