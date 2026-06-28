@@ -28,6 +28,11 @@ export default function LoginScreen({ navigation }) {
     scopes: ['profile', 'email'],
   });
 
+  const handleGooglePress = async () => {
+    setLoading(true);
+    await promptAsync(Platform.OS === 'android' ? { useProxy: true } : {});
+  };
+
   React.useEffect(() => {
     if (response?.type === 'success') {
       const { authentication } = response;
@@ -58,10 +63,7 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    await promptAsync();
-  };
+  const handleGoogleLogin = handleGooglePress;
 
   const handleEmailLogin = async () => {
     if (!email.trim() || !password.trim()) {
