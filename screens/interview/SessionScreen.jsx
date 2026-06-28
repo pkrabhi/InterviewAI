@@ -5,15 +5,12 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
-import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
 import { COLORS, SPACING, RADIUS } from '../../constants/theme';
 import MessageBubble    from '../../components/MessageBubble';
 import TypingIndicator  from '../../components/TypingIndicator';
 import HintPanel        from '../../components/HintPanel';
 import useInterviewStore from '../../store/useInterviewStore';
 import { startSession, sendMessage, endSession, getSessionMessages } from '../../services/interviewService';
-import api from '../../services/api';
 
 // ── TTS helpers ───────────────────────────────────────────────────────
 const speakText = (text, onDone) => {
@@ -179,22 +176,9 @@ export default function SessionScreen({ route, navigation }) {
       return;
     }
 
-    // Android: record with expo-av then transcribe via Groq Whisper
-    try {
-      const { status } = await Audio.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission required', 'Microphone permission is needed for voice input.');
-        return;
-      }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      recognitionRef.current = recording;
-      setIsListening(true);
-    } catch (e) {
-      Alert.alert('Error', 'Could not start recording: ' + e.message);
-    }
+    // Android: voice input not yet supported, prompt to type
+    Alert.alert('Voice Input', 'Voice-to-text is coming soon for Android. Please type your answer.');
+    return;
   };
 
   const stopListening = async () => {
@@ -207,40 +191,7 @@ export default function SessionScreen({ route, navigation }) {
       return;
     }
 
-    // Android: stop recording and transcribe via backend
-    const recording = recognitionRef.current;
-    recognitionRef.current = null;
     setIsListening(false);
-    if (!recording) return;
-
-    try {
-      await recording.stopAndUnloadAsync();
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-      const uri = recording.getURI();
-
-      // Upload audio to backend /api/interview/transcribe
-      const token = api.defaults.headers?.common?.['Authorization']?.replace('Bearer ', '');
-      const uploadRes = await FileSystem.uploadAsync(
-        `${api.defaults.baseURL}/api/interview/transcribe`,
-        uri,
-        {
-          httpMethod: 'POST',
-          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-          fieldName: 'audio',
-          mimeType: 'audio/m4a',
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const data = JSON.parse(uploadRes.body);
-      if (data.text) {
-        setInputText(data.text);
-      } else {
-        Alert.alert('Could not transcribe', 'Please type your answer instead.');
-      }
-    } catch (e) {
-      Alert.alert('Error', 'Could not process voice: ' + e.message);
-    }
   };
 
   const toggleMic = () => {

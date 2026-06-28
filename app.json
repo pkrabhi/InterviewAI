@@ -35,8 +35,7 @@
     },
     "owner": "abhipkr",
     "plugins": [
-      "expo-web-browser",
-      "expo-av"
+      "expo-web-browser"
     ]
   }
 }
