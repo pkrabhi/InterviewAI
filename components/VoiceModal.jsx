@@ -12,7 +12,12 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
   const pulse3 = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      pulse1.stopAnimation(); pulse1.setValue(1);
+      pulse2.stopAnimation(); pulse2.setValue(1);
+      pulse3.stopAnimation(); pulse3.setValue(1);
+      return;
+    }
     const animate = (anim, delay) =>
       Animated.loop(
         Animated.sequence([
@@ -25,12 +30,6 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
     animate(pulse1, 0);
     animate(pulse2, 250);
     animate(pulse3, 500);
-
-    return () => {
-      pulse1.setValue(1);
-      pulse2.setValue(1);
-      pulse3.setValue(1);
-    };
   }, [visible]);
 
   return (

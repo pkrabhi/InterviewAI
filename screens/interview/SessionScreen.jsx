@@ -242,7 +242,7 @@ export default function SessionScreen({ route, navigation }) {
 
   const doEndInterview = async () => {
     stopSpeaking();
-    stopListening();
+    stopVoiceRecording();
     try { await endSession(sessionId); } catch (_) {}
     navigation.navigate('InterviewReport', { sessionId });
   };
