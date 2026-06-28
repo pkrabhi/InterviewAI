@@ -62,9 +62,10 @@ export default function SessionScreen({ route, navigation }) {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceModalVisible, setVoiceModalVisible] = useState(false);
   const [voiceTranscript, setVoiceTranscript]     = useState('');
-  const flatListRef  = useRef(null);
+  const flatListRef    = useRef(null);
   const recognitionRef = useRef(null);
-  const pulseAnim    = useRef(new Animated.Value(1)).current;
+  const pulseAnim      = useRef(new Animated.Value(1)).current;
+  const hasSpokenFirst = useRef(false); // skip TTS on opening message
 
   // expo-speech-recognition events
   useSpeechRecognitionEvent('result', (event) => {
@@ -98,6 +99,8 @@ export default function SessionScreen({ route, navigation }) {
   }, [isListening]);
 
   useEffect(() => {
+    stopSpeaking();
+    hasSpokenFirst.current = false;
     resetSession();
     initSession();
     const interval = setInterval(() => setTimer((t) => t + 1), 1000);
@@ -114,15 +117,28 @@ export default function SessionScreen({ route, navigation }) {
     }
   }, [messages, isTyping]);
 
-  // Speak Aryan's messages automatically when voice is enabled
+  // Speak Aryan's messages — skip the opening message, speak from 2nd onward
   useEffect(() => {
     if (!voiceEnabled) return;
     const last = messages[messages.length - 1];
     if (last && last.role === 'interviewer') {
+      if (!hasSpokenFirst.current) {
+        hasSpokenFirst.current = true; // mark opening message seen, don't speak it
+        return;
+      }
       setIsSpeaking(true);
       speakText(last.content, () => setIsSpeaking(false));
     }
   }, [messages]);
+
+  // Stop speaking when user navigates away
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      stopSpeaking();
+      stopVoiceRecording();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const initSession = async () => {
     try {
