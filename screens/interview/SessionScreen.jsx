@@ -4,31 +4,48 @@ import {
   FlatList, KeyboardAvoidingView, Platform, Alert, Animated,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 import { COLORS, SPACING, RADIUS } from '../../constants/theme';
 import MessageBubble    from '../../components/MessageBubble';
 import TypingIndicator  from '../../components/TypingIndicator';
 import HintPanel        from '../../components/HintPanel';
 import useInterviewStore from '../../store/useInterviewStore';
 import { startSession, sendMessage, endSession } from '../../services/interviewService';
+import api from '../../services/api';
 
-// ── Voice helpers (web only) ──────────────────────────────────────────
-const speakText = (text) => {
-  if (Platform.OS !== 'web' || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const utter = new window.SpeechSynthesisUtterance(text);
-  utter.lang  = 'en-IN';
-  utter.rate  = 0.95;
-  utter.pitch = 0.9;
-  // Pick a male voice if available
-  const voices = window.speechSynthesis.getVoices();
-  const male   = voices.find((v) => v.lang.startsWith('en') && /male|david|mark|guy|james/i.test(v.name));
-  if (male) utter.voice = male;
-  window.speechSynthesis.speak(utter);
+// ── TTS helpers ───────────────────────────────────────────────────────
+const speakText = (text, onDone) => {
+  if (Platform.OS === 'web') {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utter = new window.SpeechSynthesisUtterance(text);
+    utter.lang  = 'en-IN';
+    utter.rate  = 0.95;
+    utter.pitch = 0.9;
+    const voices = window.speechSynthesis.getVoices();
+    const male   = voices.find((v) => v.lang.startsWith('en') && /male|david|mark|guy|james/i.test(v.name));
+    if (male) utter.voice = male;
+    utter.onend = onDone;
+    window.speechSynthesis.speak(utter);
+  } else {
+    Speech.speak(text, {
+      language: 'en-IN',
+      rate: 0.9,
+      pitch: 0.85,
+      onDone,
+      onStopped: onDone,
+      onError: onDone,
+    });
+  }
 };
 
 const stopSpeaking = () => {
-  if (Platform.OS === 'web' && window.speechSynthesis) {
-    window.speechSynthesis.cancel();
+  if (Platform.OS === 'web') {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  } else {
+    Speech.stop();
   }
 };
 
@@ -87,18 +104,7 @@ export default function SessionScreen({ route, navigation }) {
     const last = messages[messages.length - 1];
     if (last && last.role === 'interviewer') {
       setIsSpeaking(true);
-      if (Platform.OS === 'web' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const utter = new window.SpeechSynthesisUtterance(last.content);
-        utter.lang  = 'en-IN';
-        utter.rate  = 0.95;
-        utter.pitch = 0.9;
-        const voices = window.speechSynthesis.getVoices();
-        const male   = voices.find((v) => v.lang.startsWith('en') && /male|david|mark|guy|james/i.test(v.name));
-        if (male) utter.voice = male;
-        utter.onend = () => setIsSpeaking(false);
-        window.speechSynthesis.speak(utter);
-      }
+      speakText(last.content, () => setIsSpeaking(false));
     }
   }, [messages]);
 
@@ -139,41 +145,93 @@ export default function SessionScreen({ route, navigation }) {
   };
 
   // ── Speech recognition ───────────────────────────────────────────
-  const startListening = () => {
-    if (Platform.OS !== 'web') return;
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      Alert.alert('Not supported', 'Voice input is only supported in Chrome.');
+  const startListening = async () => {
+    stopSpeaking();
+
+    if (Platform.OS === 'web') {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { Alert.alert('Not supported', 'Voice input is only supported in Chrome.'); return; }
+      const recognition = new SR();
+      recognition.lang = 'en-IN';
+      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognitionRef.current = recognition;
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setInputText(transcript);
+      };
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
+      recognition.start();
+      setIsListening(true);
       return;
     }
-    stopSpeaking();
-    const recognition = new SR();
-    recognition.lang          = 'en-IN';
-    recognition.interimResults = true;
-    recognition.continuous     = false;
-    recognitionRef.current     = recognition;
 
-    recognition.onresult = (event) => {
-      let transcript = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
+    // Android: record with expo-av then transcribe via Groq Whisper
+    try {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'Microphone permission is needed for voice input.');
+        return;
       }
-      setInputText(transcript);
-    };
-
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
-
-    recognition.start();
-    setIsListening(true);
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      recognitionRef.current = recording;
+      setIsListening(true);
+    } catch (e) {
+      Alert.alert('Error', 'Could not start recording: ' + e.message);
+    }
   };
 
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
+  const stopListening = async () => {
+    if (Platform.OS === 'web') {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      setIsListening(false);
+      return;
     }
+
+    // Android: stop recording and transcribe via backend
+    const recording = recognitionRef.current;
+    recognitionRef.current = null;
     setIsListening(false);
+    if (!recording) return;
+
+    try {
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+      const uri = recording.getURI();
+
+      // Upload audio to backend /api/interview/transcribe
+      const token = api.defaults.headers?.common?.['Authorization']?.replace('Bearer ', '');
+      const uploadRes = await FileSystem.uploadAsync(
+        `${api.defaults.baseURL}/api/interview/transcribe`,
+        uri,
+        {
+          httpMethod: 'POST',
+          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+          fieldName: 'audio',
+          mimeType: 'audio/m4a',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const data = JSON.parse(uploadRes.body);
+      if (data.text) {
+        setInputText(data.text);
+      } else {
+        Alert.alert('Could not transcribe', 'Please type your answer instead.');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Could not process voice: ' + e.message);
+    }
   };
 
   const toggleMic = () => {
