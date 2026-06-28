@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   Modal, Animated, Platform,
@@ -6,18 +6,25 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 
+const MAX_SECONDS = 120; // 2 minute limit
+
 export default function VoiceModal({ visible, transcript, onStop, onSend, onCancel }) {
   const pulse1 = useRef(new Animated.Value(1)).current;
   const pulse2 = useRef(new Animated.Value(1)).current;
   const pulse3 = useRef(new Animated.Value(1)).current;
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     if (!visible) {
       pulse1.stopAnimation(); pulse1.setValue(1);
       pulse2.stopAnimation(); pulse2.setValue(1);
       pulse3.stopAnimation(); pulse3.setValue(1);
+      clearInterval(timerRef.current);
+      setElapsed(0);
       return;
     }
+
     const animate = (anim, delay) =>
       Animated.loop(
         Animated.sequence([
@@ -30,6 +37,20 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
     animate(pulse1, 0);
     animate(pulse2, 250);
     animate(pulse3, 500);
+
+    setElapsed(0);
+    timerRef.current = setInterval(() => {
+      setElapsed((s) => {
+        if (s + 1 >= MAX_SECONDS) {
+          clearInterval(timerRef.current);
+          onStop(); // auto-stop at 2 min
+          return s + 1;
+        }
+        return s + 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerRef.current);
   }, [visible]);
 
   return (
@@ -48,7 +69,12 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.hint}>Tap mic to stop recording</Text>
+          <View style={styles.timerRow}>
+            <Text style={styles.hint}>Tap mic to stop  •  </Text>
+            <Text style={[styles.timerText, elapsed >= MAX_SECONDS - 10 && styles.timerWarning]}>
+              {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')} / 2:00
+            </Text>
+          </View>
 
           {/* Live transcript */}
           <View style={styles.transcriptBox}>
@@ -141,10 +167,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 8,
   },
+  timerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: -SPACING.sm,
+  },
   hint: {
     color: COLORS.textMuted,
     fontSize: 13,
-    marginTop: -SPACING.sm,
+  },
+  timerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
+    fontFamily: 'monospace',
+  },
+  timerWarning: {
+    color: COLORS.danger,
   },
   transcriptBox: {
     width: '100%',

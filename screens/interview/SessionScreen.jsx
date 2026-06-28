@@ -205,7 +205,7 @@ export default function SessionScreen({ route, navigation }) {
       setVoiceModalVisible(false);
       return;
     }
-    ExpoSpeechRecognitionModule.start({ lang: 'en-IN', interimResults: true, continuous: false });
+    ExpoSpeechRecognitionModule.start({ lang: 'en-IN', interimResults: true, continuous: true });
     setIsListening(true);
   };
 
