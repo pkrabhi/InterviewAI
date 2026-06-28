@@ -23,6 +23,7 @@ export default function LoginScreen({ navigation }) {
   const { setUser } = useAuthStore();
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest({
+    androidClientId: WEB_CLIENT_ID,
     webClientId: WEB_CLIENT_ID,
     scopes: ['profile', 'email'],
   });
