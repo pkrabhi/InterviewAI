@@ -12,7 +12,7 @@ import MessageBubble    from '../../components/MessageBubble';
 import TypingIndicator  from '../../components/TypingIndicator';
 import HintPanel        from '../../components/HintPanel';
 import useInterviewStore from '../../store/useInterviewStore';
-import { startSession, sendMessage, endSession } from '../../services/interviewService';
+import { startSession, sendMessage, endSession, getSessionMessages } from '../../services/interviewService';
 import api from '../../services/api';
 
 // ── TTS helpers ───────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ const stopSpeaking = () => {
 
 // ── Main component ────────────────────────────────────────────────────
 export default function SessionScreen({ route, navigation }) {
-  const { role, level, type, jdText } = route.params || {};
+  const { role, level, type, jdText, resumeSessionId } = route.params || {};
 
   const [inputText, setInputText]     = useState('');
   const [timer, setTimer]             = useState(0);
@@ -111,14 +111,23 @@ export default function SessionScreen({ route, navigation }) {
   const initSession = async () => {
     try {
       setTyping(true);
-      const response = await startSession({
-        role:          role?.id || 'java',
-        level:         level || 'Mid',
-        interviewType: type?.id || 'technical',
-        jdText:        jdText || '',
-      });
-      setSessionId(response.sessionId);
-      addMessage({ role: 'interviewer', content: response.openingMessage });
+
+      if (resumeSessionId) {
+        // Resume: load existing messages from backend
+        setSessionId(resumeSessionId);
+        const history = await getSessionMessages(resumeSessionId);
+        history.forEach((msg) => addMessage({ role: msg.role, content: msg.content }));
+      } else {
+        // New session
+        const response = await startSession({
+          role:          role?.id || 'java',
+          level:         level || 'Mid',
+          interviewType: type?.id || 'technical',
+          jdText:        jdText || '',
+        });
+        setSessionId(response.sessionId);
+        addMessage({ role: 'interviewer', content: response.openingMessage });
+      }
     } catch (error) {
       Alert.alert('Connection Error', 'Could not connect to the interview server. Make sure the backend is running.');
     } finally {

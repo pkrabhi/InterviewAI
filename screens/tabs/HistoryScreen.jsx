@@ -41,7 +41,13 @@ const SessionCard = ({ session, onPress }) => {
         </View>
       </View>
       <View style={styles.cardRight}>
-        <ScoreBadge score={session.overallScore} />
+        {session.status === 'ACTIVE' ? (
+          <View style={[styles.badge, { backgroundColor: COLORS.accent + '22', borderColor: COLORS.accent + '55' }]}>
+            <Text style={[styles.badgeText, { color: COLORS.accent, fontSize: 11 }]}>Resume</Text>
+          </View>
+        ) : (
+          <ScoreBadge score={session.overallScore} />
+        )}
         <MaterialCommunityIcons name="chevron-right" size={20} color={COLORS.textMuted} />
       </View>
     </TouchableOpacity>
@@ -101,7 +107,13 @@ export default function HistoryScreen({ navigation }) {
                 if (item.status === 'COMPLETED') {
                   navigation.navigate('InterviewReport', { sessionId: item.id });
                 } else {
-                  alert('This session was not completed. Start a new interview.');
+                  // Resume active session
+                  navigation.navigate('InterviewSession', {
+                    resumeSessionId: item.id,
+                    role: { id: item.role, label: item.role },
+                    level: item.level,
+                    type: { id: item.interviewType, label: item.interviewType },
+                  });
                 }
               }}
             />
