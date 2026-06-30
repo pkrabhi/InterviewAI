@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, RADIUS } from '../constants/theme';
+import { SPACING, RADIUS, FONT_SIZE } from '../constants/theme';
+import useThemeStore from '../store/useThemeStore';
+import GlassCard from './GlassCard';
 
 export default function MessageBubble({ role, content }) {
+  const { COLORS } = useThemeStore();
   const isInterviewer = role === 'interviewer';
+  const styles = useMemo(() => makeStyles(COLORS), [COLORS]);
 
   return (
     <View style={[styles.row, isInterviewer ? styles.rowLeft : styles.rowRight]}>
@@ -12,56 +16,47 @@ export default function MessageBubble({ role, content }) {
           <Text style={styles.avatarText}>A</Text>
         </View>
       )}
-      <View style={[styles.bubble, isInterviewer ? styles.bubbleLeft : styles.bubbleRight]}>
-        <Text style={styles.content}>{content}</Text>
-      </View>
+      {isInterviewer ? (
+        <GlassCard style={styles.bubbleLeft} intensity={28}>
+          <Text style={[styles.content, { color: COLORS.text }]}>{content}</Text>
+        </GlassCard>
+      ) : (
+        <View style={styles.bubbleRight}>
+          <Text style={[styles.content, { color: '#fff' }]}>{content}</Text>
+        </View>
+      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (COLORS) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     marginVertical: SPACING.xs,
     paddingHorizontal: SPACING.md,
     alignItems: 'flex-end',
   },
-  rowLeft: {
-    justifyContent: 'flex-start',
-  },
-  rowRight: {
-    justifyContent: 'flex-end',
-  },
+  rowLeft:  { justifyContent: 'flex-start' },
+  rowRight: { justifyContent: 'flex-end' },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: RADIUS.full,
+    width: 32, height: 32, borderRadius: RADIUS.full,
     backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
     marginRight: SPACING.sm,
   },
-  avatarText: {
-    color: COLORS.text,
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  bubble: {
+  avatarText: { color: '#fff', fontWeight: 'bold', fontSize: FONT_SIZE.sm },
+  bubbleLeft: {
     maxWidth: '75%',
     padding: SPACING.md,
     borderRadius: RADIUS.lg,
-  },
-  bubbleLeft: {
-    backgroundColor: COLORS.card,
     borderBottomLeftRadius: RADIUS.sm,
   },
   bubbleRight: {
-    backgroundColor: COLORS.primary,
+    maxWidth: '75%',
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
     borderBottomRightRadius: RADIUS.sm,
+    backgroundColor: COLORS.primary,
   },
-  content: {
-    color: COLORS.text,
-    fontSize: 15,
-    lineHeight: 22,
-  },
+  content: { fontSize: FONT_SIZE.md, lineHeight: 22 },
 });

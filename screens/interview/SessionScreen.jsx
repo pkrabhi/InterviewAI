@@ -12,7 +12,10 @@ import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../constants/theme';
+import { SPACING, RADIUS, FONT_SIZE } from '../../constants/theme';
+import useThemeStore from '../../store/useThemeStore';
+import ScreenBackground from '../../components/ScreenBackground';
+import GlassCard from '../../components/GlassCard';
 import { ms } from '../../utils/responsive';
 import MessageBubble    from '../../components/MessageBubble';
 import TypingIndicator  from '../../components/TypingIndicator';
@@ -59,6 +62,7 @@ const stopSpeaking = () => {
 export default function SessionScreen({ route, navigation }) {
   const { role, level, type, jdText, resumeSummary, resumeSessionId } = route.params || {};
   const { width } = useWindowDimensions();
+  const { COLORS, isDark } = useThemeStore();
 
   const [inputText, setInputText]       = useState('');
   const [timer, setTimer]               = useState(0);
@@ -314,130 +318,166 @@ export default function SessionScreen({ route, navigation }) {
   const progress = Math.min(candidateAnswers / 7, 1);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
-    >
-      {/* Glass Header */}
-      <View style={styles.headerWrapper}>
-        {Platform.OS !== 'web' && (
-          <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
-        )}
-        <View style={[StyleSheet.absoluteFill, styles.headerTint]} />
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <LinearGradient
-              colors={isSpeaking ? ['#10B981', '#059669'] : ['#6366F1', '#7C3AED']}
-              style={[styles.avatar, isSpeaking && styles.avatarSpeaking]}
-            >
-              <Text style={styles.avatarText}>A</Text>
-            </LinearGradient>
-            <View>
-              <Text style={styles.interviewerName}>
-                Aryan {isSpeaking ? '🔊' : ''}
-              </Text>
-              <Text style={styles.roleLabel}>{role?.label || 'Java Backend'} • {level || 'Mid'}</Text>
-            </View>
-          </View>
-          <View style={styles.headerRight}>
-            <TouchableOpacity onPress={toggleVoice} style={styles.headerIconBtn}>
-              <MaterialCommunityIcons
-                name={voiceEnabled ? 'volume-high' : 'volume-off'}
-                size={18}
-                color={voiceEnabled ? COLORS.primaryLight : 'rgba(255,255,255,0.3)'}
-              />
-            </TouchableOpacity>
-            <View style={styles.timerPill}>
-              <Text style={styles.timer}>{formatTime(timer)}</Text>
-            </View>
-            <TouchableOpacity onPress={handleEndInterview} style={styles.endBtn}>
-              <Text style={styles.endBtnText}>End</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
-      {/* Progress bar */}
-      <View style={styles.progressBg}>
-        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-      </View>
-      <Text style={styles.progressLabel}>{candidateAnswers}/7 questions answered</Text>
-
-      {/* Chat messages */}
-      <View style={styles.chatContainer}>
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={(_, index) => index.toString()}
-          renderItem={({ item }) => (
-            <MessageBubble role={item.role} content={item.content} />
-          )}
-          ListFooterComponent={isTyping ? <TypingIndicator /> : null}
-          contentContainerStyle={styles.chatContent}
-          showsVerticalScrollIndicator={true}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        />
-      </View>
-
-      {/* Interview complete banner */}
-      {isComplete && (
-        <TouchableOpacity
-          style={styles.completeBanner}
-          onPress={() => navigation.navigate('InterviewReport', { sessionId })}
+    <ScreenBackground style={{ flex: 1, ...(Platform.OS === 'web' ? { height: '100vh', maxHeight: '100vh', overflow: 'hidden' } : {}) }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={90}
+      >
+        {/* Glass Header */}
+        <GlassCard
+          style={{ borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderTopWidth: 0 }}
+          intensity={32}
+          borderColor={COLORS.glassBorder}
         >
-          <Text style={styles.completeText}>Interview complete! Tap to view your report</Text>
-          <MaterialCommunityIcons name="arrow-right" size={18} color={COLORS.text} />
-        </TouchableOpacity>
-      )}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.md }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm }}>
+              <LinearGradient
+                colors={isSpeaking ? [COLORS.success, '#059669'] : [COLORS.primary, '#7C3AED']}
+                style={{
+                  width: 42, height: 42, borderRadius: RADIUS.full,
+                  alignItems: 'center', justifyContent: 'center',
+                  ...(isSpeaking ? { shadowColor: COLORS.success, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.9, shadowRadius: 10, elevation: 8 } : {}),
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: FONT_SIZE.md }}>A</Text>
+              </LinearGradient>
+              <View>
+                <Text style={{ color: COLORS.text, fontWeight: '600', fontSize: FONT_SIZE.md }}>
+                  Aryan {isSpeaking ? '🔊' : ''}
+                </Text>
+                <Text style={{ color: COLORS.textMuted, fontSize: FONT_SIZE.xs }}>
+                  {role?.label || 'Java Backend'} • {level || 'Mid'}
+                </Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm }}>
+              <TouchableOpacity onPress={toggleVoice} style={{ padding: 6 }}>
+                <MaterialCommunityIcons
+                  name={voiceEnabled ? 'volume-high' : 'volume-off'}
+                  size={18}
+                  color={voiceEnabled ? COLORS.primaryLight : COLORS.textMuted}
+                />
+              </TouchableOpacity>
+              <GlassCard style={{ paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: RADIUS.full }} intensity={18}>
+                <Text style={{ color: COLORS.textMuted, fontSize: FONT_SIZE.sm, fontFamily: 'monospace' }}>
+                  {formatTime(timer)}
+                </Text>
+              </GlassCard>
+              <TouchableOpacity
+                onPress={handleEndInterview}
+                style={{ borderWidth: 1, borderColor: COLORS.danger + '88', borderRadius: RADIUS.sm, paddingHorizontal: SPACING.sm, paddingVertical: 5, backgroundColor: COLORS.danger + '15' }}
+              >
+                <Text style={{ color: COLORS.danger, fontSize: FONT_SIZE.sm, fontWeight: '700' }}>End</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </GlassCard>
 
-      {/* Voice modal */}
-      <VoiceModal
-        visible={voiceModalVisible}
-        transcript={voiceTranscript}
-        onStop={stopVoiceRecording}
-        onSend={handleVoiceSend}
-        onCancel={handleVoiceCancel}
-      />
+        {/* Progress bar */}
+        <View style={{ height: 2, backgroundColor: COLORS.glassBorder }}>
+          <View style={{ height: 2, backgroundColor: COLORS.primary, width: `${progress * 100}%` }} />
+        </View>
+        <Text style={{ color: COLORS.textMuted, fontSize: FONT_SIZE.xs, textAlign: 'center', paddingVertical: SPACING.xs }}>
+          {candidateAnswers}/7 questions answered
+        </Text>
 
-      {/* Glass input area */}
-      {!isComplete && (
-        <View style={styles.inputAreaWrapper}>
-          {Platform.OS !== 'web' && (
-            <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
-          )}
-          <View style={[StyleSheet.absoluteFill, styles.inputAreaTint]} />
-          <View style={styles.inputArea}>
+        {/* Chat messages */}
+        <View style={{ flex: 1, ...(Platform.OS === 'web' ? { overflowY: 'auto', minHeight: 0 } : { overflow: 'hidden' }) }}>
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(_, index) => index.toString()}
+            renderItem={({ item }) => <MessageBubble role={item.role} content={item.content} />}
+            ListFooterComponent={isTyping ? <TypingIndicator /> : null}
+            contentContainerStyle={{ paddingVertical: SPACING.md, paddingBottom: SPACING.xl }}
+            showsVerticalScrollIndicator={true}
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          />
+        </View>
+
+        {/* Interview complete banner */}
+        {isComplete && (
+          <TouchableOpacity
+            onPress={() => navigation.navigate('InterviewReport', { sessionId })}
+            style={{ margin: SPACING.md, borderRadius: RADIUS.md, overflow: 'hidden' }}
+          >
+            <GlassCard
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md }}
+              tint={COLORS.success + '20'}
+              borderColor={COLORS.success + '55'}
+              intensity={24}
+            >
+              <Text style={{ color: COLORS.success, fontWeight: '600', fontSize: FONT_SIZE.sm }}>
+                Interview complete! Tap to view your report
+              </Text>
+              <MaterialCommunityIcons name="arrow-right" size={18} color={COLORS.success} />
+            </GlassCard>
+          </TouchableOpacity>
+        )}
+
+        {/* Voice modal */}
+        <VoiceModal
+          visible={voiceModalVisible}
+          transcript={voiceTranscript}
+          onStop={stopVoiceRecording}
+          onSend={handleVoiceSend}
+          onCancel={handleVoiceCancel}
+        />
+
+        {/* Glass input area */}
+        {!isComplete && (
+          <GlassCard
+            style={{ borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderBottomWidth: 0, paddingTop: SPACING.sm }}
+            intensity={32}
+            borderColor={COLORS.glassBorder}
+          >
             <HintPanel hint="Think about a real example from your work experience." />
 
             {isListening && (
-              <View style={styles.listeningBar}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, paddingHorizontal: SPACING.md, paddingBottom: SPACING.xs }}>
                 <MaterialCommunityIcons name="microphone" size={14} color={COLORS.danger} />
-                <Text style={styles.listeningText}>Listening... tap mic to stop</Text>
+                <Text style={{ color: COLORS.danger, fontSize: 12, fontWeight: '500' }}>Listening... tap mic to stop</Text>
               </View>
             )}
 
-            <View style={styles.inputRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', padding: SPACING.md, paddingTop: SPACING.sm, gap: SPACING.sm }}>
               <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                 <TouchableOpacity
-                  style={[styles.micBtn, isListening && styles.micBtnActive]}
                   onPress={toggleMic}
                   disabled={isTyping}
+                  style={{
+                    width: 44, height: 44, borderRadius: RADIUS.full,
+                    alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: isListening ? COLORS.danger : COLORS.inputBg,
+                    borderWidth: 1, borderColor: isListening ? 'transparent' : COLORS.inputBorder,
+                  }}
                 >
                   <MaterialCommunityIcons
                     name={isListening ? 'microphone' : 'microphone-outline'}
                     size={22}
-                    color={isListening ? '#fff' : 'rgba(255,255,255,0.4)'}
+                    color={isListening ? '#fff' : COLORS.textMuted}
                   />
                 </TouchableOpacity>
               </Animated.View>
 
               <TextInput
-                style={styles.input}
+                style={{
+                  flex: 1,
+                  backgroundColor: COLORS.inputBg,
+                  borderRadius: RADIUS.md,
+                  borderWidth: 1,
+                  borderColor: COLORS.inputBorder,
+                  paddingHorizontal: SPACING.md,
+                  paddingVertical: SPACING.sm,
+                  color: COLORS.text,
+                  fontSize: FONT_SIZE.md,
+                  maxHeight: 120,
+                }}
                 value={inputText}
                 onChangeText={setInputText}
                 placeholder={isListening ? 'Listening...' : 'Type or speak your answer...'}
-                placeholderTextColor="rgba(255,255,255,0.28)"
+                placeholderTextColor={COLORS.textMuted}
                 multiline
                 maxLength={1000}
               />
@@ -445,179 +485,16 @@ export default function SessionScreen({ route, navigation }) {
               <TouchableOpacity
                 onPress={handleSend}
                 disabled={!inputText.trim() || isTyping}
-                style={[styles.sendBtnWrapper, (!inputText.trim() || isTyping) && { opacity: 0.4 }]}
+                style={{ borderRadius: RADIUS.full, overflow: 'hidden', opacity: (!inputText.trim() || isTyping) ? 0.4 : 1 }}
               >
-                <LinearGradient
-                  colors={['#6366F1', '#818CF8']}
-                  style={styles.sendBtn}
-                >
+                <LinearGradient colors={[COLORS.primary, COLORS.primaryLight]} style={{ width: 44, height: 44, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center' }}>
                   <MaterialCommunityIcons name="send" size={18} color="#fff" />
                 </LinearGradient>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
-      )}
-    </KeyboardAvoidingView>
+          </GlassCard>
+        )}
+      </KeyboardAvoidingView>
+    </ScreenBackground>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-    ...(Platform.OS === 'web' ? {
-      height: '100vh',
-      maxHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-    } : {}),
-  },
-  headerWrapper: {
-    overflow: 'hidden',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.07)',
-  },
-  headerTint: {
-    backgroundColor: 'rgba(10, 14, 26, 0.55)',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: SPACING.md,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: RADIUS.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarSpeaking: {
-    shadowColor: COLORS.success,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  avatarText: { color: '#fff', fontWeight: 'bold', fontSize: FONT_SIZE.md },
-  interviewerName: { color: COLORS.text, fontWeight: '600', fontSize: FONT_SIZE.md },
-  roleLabel: { color: 'rgba(255,255,255,0.4)', fontSize: FONT_SIZE.xs },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  headerIconBtn: { padding: 6 },
-  timerPill: {
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderRadius: RADIUS.full,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-  },
-  timer: { color: 'rgba(255,255,255,0.55)', fontSize: FONT_SIZE.sm, fontFamily: 'monospace' },
-  endBtn: {
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.5)',
-    borderRadius: RADIUS.sm,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 5,
-    backgroundColor: 'rgba(239,68,68,0.08)',
-  },
-  endBtnText: { color: COLORS.danger, fontSize: FONT_SIZE.sm, fontWeight: '700' },
-  progressBg: { height: 2, backgroundColor: 'rgba(255,255,255,0.06)' },
-  progressFill: { height: 2, backgroundColor: COLORS.primary },
-  progressLabel: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: FONT_SIZE.xs,
-    textAlign: 'center',
-    paddingVertical: SPACING.xs,
-  },
-  chatContainer: {
-    flex: 1,
-    ...(Platform.OS === 'web' ? { overflowY: 'auto', minHeight: 0 } : { overflow: 'hidden' }),
-  },
-  chatContent: { paddingVertical: SPACING.md, paddingBottom: SPACING.xl },
-  completeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    backgroundColor: 'rgba(16,185,129,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(16,185,129,0.4)',
-    padding: SPACING.md,
-    margin: SPACING.md,
-    borderRadius: RADIUS.md,
-  },
-  completeText: { color: COLORS.success, fontWeight: '600', fontSize: 14 },
-  inputAreaWrapper: {
-    overflow: 'hidden',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.07)',
-    flexShrink: 0,
-  },
-  inputAreaTint: {
-    backgroundColor: 'rgba(10, 14, 26, 0.60)',
-  },
-  inputArea: {
-    paddingTop: SPACING.sm,
-  },
-  listeningBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.xs,
-  },
-  listeningText: { color: COLORS.danger, fontSize: 12, fontWeight: '500' },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: SPACING.md,
-    paddingTop: SPACING.sm,
-    gap: SPACING.sm,
-  },
-  micBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.full,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-  },
-  micBtnActive: {
-    backgroundColor: 'rgba(239,68,68,0.85)',
-    borderColor: 'transparent',
-  },
-  input: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    color: COLORS.text,
-    fontSize: 15,
-    maxHeight: 120,
-  },
-  sendBtnWrapper: {
-    borderRadius: RADIUS.full,
-    overflow: 'hidden',
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
