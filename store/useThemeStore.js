@@ -15,7 +15,7 @@ export const FONT_SIZE = {
 
 // ── Dark theme (deep navy with indigo glass) ───────────────────────────
 export const DARK_COLORS = {
-  bg:           '#080B14',
+  bg:           '#060912',
   card:         '#111827',
   primary:      '#6366F1',
   primaryLight: '#818CF8',
@@ -26,20 +26,20 @@ export const DARK_COLORS = {
   textMuted:    '#94A3B8',
   border:       '#1E3A5F',
   // glass-specific
-  glassTint:    'rgba(10, 16, 32, 0.55)',
-  glassBorder:  'rgba(255, 255, 255, 0.13)',
+  glassTint:    'rgba(8, 14, 40, 0.45)',
+  glassBorder:  'rgba(255, 255, 255, 0.18)',
   inputBg:      'rgba(255, 255, 255, 0.07)',
-  inputBorder:  'rgba(255, 255, 255, 0.12)',
-  // orbs
-  orb1: ['#6366F180', '#4338CA50', 'transparent'],
-  orb2: ['#F59E0B55', '#EF444430', 'transparent'],
-  orb3: ['#818CF845', 'transparent'],
-  orb4: ['#7C3AED30', 'transparent'],
+  inputBorder:  'rgba(255, 255, 255, 0.14)',
+  // orbs — vivid so BlurView has rich color to blur over
+  orb1: ['#6366F1CC', '#4338CAA0', '#7C3AED44', 'transparent'],
+  orb2: ['#F59E0BAA', '#EF444470', '#EC489960', 'transparent'],
+  orb3: ['#818CF8AA', '#6366F160', 'transparent'],
+  orb4: ['#7C3AEDBB', '#A855F770', 'transparent'],
 };
 
 // ── Light theme (warm golden liquid glass like reference image) ─────────
 export const LIGHT_COLORS = {
-  bg:           '#F5E6C8',
+  bg:           '#E8C97A',
   card:         '#FDF6E3',
   primary:      '#5B5FEF',
   primaryLight: '#7B7FF5',
@@ -48,17 +48,17 @@ export const LIGHT_COLORS = {
   danger:       '#DC2626',
   text:         '#1C1006',
   textMuted:    '#7A5C30',
-  border:       'rgba(180, 120, 40, 0.3)',
-  // glass-specific
-  glassTint:    'rgba(255, 240, 190, 0.32)',
-  glassBorder:  'rgba(220, 160, 60, 0.35)',
-  inputBg:      'rgba(180, 120, 40, 0.12)',
-  inputBorder:  'rgba(180, 120, 40, 0.25)',
-  // orbs — warm amber/golden/coral palette
-  orb1: ['#F59E0B90', '#FBBF2460', 'transparent'],
-  orb2: ['#EF444455', '#F9731640', 'transparent'],
-  orb3: ['#FCD34D50', 'transparent'],
-  orb4: ['#FB923C40', 'transparent'],
+  border:       'rgba(180, 120, 40, 0.35)',
+  // glass-specific — translucent warm amber glass
+  glassTint:    'rgba(255, 210, 120, 0.28)',
+  glassBorder:  'rgba(255, 200, 80, 0.50)',
+  inputBg:      'rgba(180, 110, 20, 0.14)',
+  inputBorder:  'rgba(200, 140, 40, 0.35)',
+  // orbs — deep saturated amber/coral/orange for vivid glass blur
+  orb1: ['#F59E0BEE', '#FBBF24CC', '#FDE68A80', 'transparent'],
+  orb2: ['#EF4444CC', '#F97316BB', '#FB923C80', 'transparent'],
+  orb3: ['#FCD34DEE', '#F59E0BAA', 'transparent'],
+  orb4: ['#FB923CCC', '#FDE047AA', 'transparent'],
 };
 
 const useThemeStore = create((set, get) => ({
