@@ -19,17 +19,15 @@ function injectWebRootStyles() {
   const style = document.createElement('style');
   style.id = id;
   style.textContent = `
-    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
-    #root { height: 100%; display: flex; flex-direction: column; }
-    /* Smooth scrolling for all scrollable RN-web containers */
-    div[style*="overflow-y: scroll"], div[style*="overflow-y: auto"] {
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-    }
-    /* Remove tap highlight on mobile web */
-    * { -webkit-tap-highlight-color: transparent; }
-    /* Prevent rubber-band scroll on outermost body */
-    body { overscroll-behavior: none; }
+    html { height: 100%; height: 100dvh; margin: 0; padding: 0; }
+    body { height: 100%; height: 100dvh; margin: 0; padding: 0; overflow: hidden; overscroll-behavior: none; }
+    #root { height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+    /* Smooth touch scroll on all scrollable divs */
+    * { -webkit-overflow-scrolling: touch; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    /* Allow scroll inside scrollable containers */
+    [data-focusable="true"], div[style*="overflow"] { overscroll-behavior: contain; }
+    /* Prevent iOS bounce on outer */
+    body { touch-action: pan-y; }
   `;
   document.head.appendChild(style);
 }

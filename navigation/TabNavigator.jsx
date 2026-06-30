@@ -23,7 +23,7 @@ export default function TabNavigator() {
           paddingBottom:   8,
           ...(Platform.OS === 'web' ? { position: 'sticky', bottom: 0, zIndex: 100 } : {}),
         },
-        sceneContainerStyle: Platform.OS === 'web' ? { height: '100%', overflow: 'hidden' } : {},
+        sceneContainerStyle: Platform.OS === 'web' ? { flex: 1, height: '100%' } : {},
         tabBarActiveTintColor:   COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarIcon: ({ color, size }) => {

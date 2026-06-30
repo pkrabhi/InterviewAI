@@ -24,7 +24,7 @@ export default function AppNavigator() {
         headerStyle:      { backgroundColor: COLORS.card },
         headerTintColor:  COLORS.text,
         headerTitleStyle: { fontWeight: '600' },
-        cardStyle:        { backgroundColor: COLORS.bg, flex: 1, ...(Platform.OS === 'web' ? { height: '100%', overflow: 'hidden' } : {}) },
+        cardStyle:        { backgroundColor: COLORS.bg, flex: 1, ...(Platform.OS === 'web' ? { height: '100%' } : {}) },
         animationEnabled: Platform.OS !== 'web',
       }}
     >

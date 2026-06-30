@@ -317,10 +317,12 @@ export default function SessionScreen({ route, navigation }) {
   const candidateAnswers = messages.filter((m) => m.role === 'candidate').length;
   const progress = Math.min(candidateAnswers / 7, 1);
 
+  const isWeb = Platform.OS === 'web';
+
   return (
-    <ScreenBackground style={{ flex: 1, ...(Platform.OS === 'web' ? { height: '100vh', maxHeight: '100vh', overflow: 'hidden' } : {}) }}>
+    <ScreenBackground style={{ flex: 1, ...(isWeb ? { height: '100%', display: 'flex', flexDirection: 'column' } : {}) }}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{ flex: 1, ...(isWeb ? { display: 'flex', flexDirection: 'column', minHeight: 0 } : {}) }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={90}
       >
@@ -383,7 +385,7 @@ export default function SessionScreen({ route, navigation }) {
         </Text>
 
         {/* Chat messages */}
-        <View style={{ flex: 1, ...(Platform.OS === 'web' ? { overflowY: 'auto', minHeight: 0 } : { overflow: 'hidden' }) }}>
+        <View style={{ flex: 1, minHeight: 0, ...(isWeb ? { overflowY: 'auto', WebkitOverflowScrolling: 'touch' } : { overflow: 'hidden' }) }}>
           <FlatList
             ref={flatListRef}
             data={messages}
@@ -391,7 +393,7 @@ export default function SessionScreen({ route, navigation }) {
             renderItem={({ item }) => <MessageBubble role={item.role} content={item.content} />}
             ListFooterComponent={isTyping ? <TypingIndicator /> : null}
             contentContainerStyle={{ paddingVertical: SPACING.md, paddingBottom: SPACING.xl }}
-            showsVerticalScrollIndicator={true}
+            showsVerticalScrollIndicator={false}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           />
         </View>
@@ -425,10 +427,14 @@ export default function SessionScreen({ route, navigation }) {
           onCancel={handleVoiceCancel}
         />
 
-        {/* Glass input area */}
+        {/* Glass input area — sticky on web so keyboard never hides it */}
         {!isComplete && (
           <GlassCard
-            style={{ borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderBottomWidth: 0, paddingTop: SPACING.sm }}
+            style={{
+              borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderBottomWidth: 0,
+              paddingTop: SPACING.sm,
+              ...(isWeb ? { position: 'sticky', bottom: 0, zIndex: 50 } : {}),
+            }}
             intensity={32}
             borderColor={COLORS.glassBorder}
           >
