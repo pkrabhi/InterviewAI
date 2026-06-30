@@ -68,14 +68,13 @@ export default function HomeScreen({ navigation }) {
             borderColor={COLORS.primary + '80'}
             borderRadius={RADIUS.xl}
           >
-            {/* Inner colour gradient so glass has rich colour to blur over */}
+            {/* Inner colour gradient so glass picks up rich indigo colour */}
             <LinearGradient
-              colors={[COLORS.primary + 'CC', '#7C3AED99', 'transparent']}
+              colors={[COLORS.primary + 'BB', '#7C3AED88', 'transparent']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: RADIUS.xl }}
               pointerEvents="none"
             />
-            {/* Glow orb */}
             <View style={styles.ctaGlow} pointerEvents="none" />
             <View style={{ flex: 1 }}>
               <Text style={styles.ctaTitle}>Start New Interview</Text>
@@ -203,7 +202,7 @@ const makeStyles = (COLORS, width) => StyleSheet.create({
   ctaCard: {
     flexDirection: 'row', alignItems: 'center',
     padding: SPACING.lg, paddingVertical: SPACING.xl,
-    borderRadius: RADIUS.xl, minHeight: 110,
+    borderRadius: RADIUS.xl, minHeight: 120,
   },
   ctaGlow: {
     position: 'absolute', top: -40, left: '30%',

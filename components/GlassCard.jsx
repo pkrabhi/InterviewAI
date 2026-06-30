@@ -6,22 +6,17 @@ import useThemeStore from '../store/useThemeStore';
 import { ms } from '../utils/responsive';
 
 /**
- * Liquid glass card.
+ * GlassCard — liquid glass card.
  *
- * Technique:
- *  1. BlurView behind everything (frosted layer)
- *  2. Warm/cool tint overlay
- *  3. Top-shine gradient  — simulates light hitting glass surface
- *  4. Left-rim highlight  — simulates glass edge thickness
- *  5. Bottom depth shadow — gives the card a "resting on surface" feel
- *  6. Bright top border   — glass rim
- *
- * Result: visible glass effect even on devices where BlurView is flat.
+ * IMPORTANT layout note:
+ * The glass effect uses absolutely-positioned layers behind the content.
+ * All padding/flex layout props are forwarded to the content wrapper View
+ * so they actually affect children (not just the outer sizing shell).
  */
 export default function GlassCard({
   children,
   style,
-  intensity = 40,
+  intensity = 32,
   tint,
   borderColor,
   borderRadius: radiusProp,
@@ -34,122 +29,95 @@ export default function GlassCard({
   const resolvedBorder = borderColor ?? COLORS.glassBorder;
 
   const resolvedIntensity = Platform.OS === 'android'
-    ? Math.min(intensity + 20, 80)
+    ? Math.min(intensity + 16, 80)
     : intensity;
 
-  // ── Glass visual layers ──────────────────────────────────────────
-  // Top shine — the brightest part simulating light on glass
+  // ── Extract layout/padding props from style so they go to content wrapper ──
+  const flatStyle = StyleSheet.flatten([style]) || {};
+  const {
+    padding, paddingTop, paddingBottom, paddingLeft, paddingRight,
+    paddingHorizontal, paddingVertical,
+    flexDirection, alignItems, justifyContent, flexWrap,
+    gap, rowGap, columnGap,
+    flex: _flex, // don't forward flex to content wrapper
+    minHeight, height,
+    // visual props stay on outer — borderRadius, borderWidth, margin*, width, etc.
+    ...outerOnlyStyle
+  } = flatStyle;
+
+  const contentStyle = {
+    flexDirection, alignItems, justifyContent, flexWrap,
+    padding, paddingTop, paddingBottom, paddingLeft, paddingRight,
+    paddingHorizontal, paddingVertical,
+    gap, rowGap, columnGap,
+    minHeight, height,
+  };
+
+  // ── Glass shine layers (always the same regardless of platform) ────
   const shineTop = isDark
-    ? ['rgba(255,255,255,0.28)', 'rgba(255,255,255,0.10)', 'rgba(255,255,255,0.02)', 'transparent']
-    : ['rgba(255,255,255,0.72)', 'rgba(255,255,255,0.32)', 'rgba(255,255,255,0.06)', 'transparent'];
+    ? ['rgba(255,255,255,0.26)', 'rgba(255,255,255,0.08)', 'rgba(255,255,255,0.01)', 'transparent']
+    : ['rgba(255,255,255,0.68)', 'rgba(255,255,255,0.28)', 'rgba(255,255,255,0.04)', 'transparent'];
 
-  // Bottom shadow — glass sitting on surface
   const depthBottom = isDark
-    ? ['transparent', 'rgba(0,0,0,0.22)']
-    : ['transparent', 'rgba(160, 80, 0, 0.14)'];
+    ? ['transparent', 'rgba(0,0,0,0.20)']
+    : ['transparent', 'rgba(160,80,0,0.12)'];
 
-  // Inner gradient tint — gives glass its "color"
   const innerTint = isDark
-    ? ['rgba(100,110,255,0.10)', 'rgba(60,70,180,0.06)', 'rgba(0,0,0,0.0)']
-    : ['rgba(255,200,80,0.22)', 'rgba(255,160,30,0.10)', 'rgba(255,255,255,0.0)'];
+    ? ['rgba(100,110,255,0.08)', 'transparent']
+    : ['rgba(255,200,80,0.18)', 'transparent'];
 
   const GlassLayers = () => (
     <>
-      {/* Inner color tint — top to bottom gradient */}
+      <LinearGradient colors={innerTint} style={[StyleSheet.absoluteFill, { borderRadius: radius }]} pointerEvents="none" />
       <LinearGradient
-        colors={innerTint}
-        style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
+        colors={shineTop} locations={[0, 0.35, 0.65, 1]}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '58%', borderTopLeftRadius: radius, borderTopRightRadius: radius }}
         pointerEvents="none"
       />
-
-      {/* Top shine — covers top 55% of card */}
-      <LinearGradient
-        colors={shineTop}
-        locations={[0, 0.35, 0.65, 1]}
-        style={{
-          position: 'absolute', top: 0, left: 0, right: 0,
-          height: '58%',
-          borderTopLeftRadius: radius,
-          borderTopRightRadius: radius,
-        }}
-        pointerEvents="none"
-      />
-
-      {/* Bottom depth */}
       <LinearGradient
         colors={depthBottom}
-        style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          height: '35%',
-          borderBottomLeftRadius: radius,
-          borderBottomRightRadius: radius,
-        }}
+        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%', borderBottomLeftRadius: radius, borderBottomRightRadius: radius }}
         pointerEvents="none"
       />
-
-      {/* Left-edge rim — glass thickness illusion */}
       <LinearGradient
-        colors={isDark
-          ? ['rgba(255,255,255,0.30)', 'rgba(255,255,255,0.10)', 'rgba(255,255,255,0.03)']
-          : ['rgba(255,255,255,0.80)', 'rgba(255,255,255,0.30)', 'rgba(255,255,255,0.05)']}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
-        style={{
-          position: 'absolute', top: 3, left: 0, bottom: 3, width: ms(4),
-          borderTopLeftRadius: radius,
-          borderBottomLeftRadius: radius,
-        }}
+        colors={isDark ? ['rgba(255,255,255,0.28)', 'rgba(255,255,255,0.06)'] : ['rgba(255,255,255,0.75)', 'rgba(255,255,255,0.10)']}
+        start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
+        style={{ position: 'absolute', top: 3, left: 0, bottom: 3, width: ms(4), borderTopLeftRadius: radius, borderBottomLeftRadius: radius }}
         pointerEvents="none"
       />
-
-      {/* Top-edge rim highlight */}
       <LinearGradient
-        colors={isDark
-          ? ['rgba(255,255,255,0.40)', 'rgba(255,255,255,0.10)', 'transparent']
-          : ['rgba(255,255,255,0.90)', 'rgba(255,255,255,0.35)', 'transparent']}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={{
-          position: 'absolute', top: 0, left: 3, right: 3, height: ms(3),
-          borderTopLeftRadius: radius,
-          borderTopRightRadius: radius,
-        }}
+        colors={isDark ? ['rgba(255,255,255,0.38)', 'transparent'] : ['rgba(255,255,255,0.85)', 'transparent']}
+        start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+        style={{ position: 'absolute', top: 0, left: 3, right: 3, height: ms(3), borderTopLeftRadius: radius, borderTopRightRadius: radius }}
         pointerEvents="none"
       />
     </>
   );
 
-  // ── Render ───────────────────────────────────────────────────────
-  const outerStyle = {
+  const outerShell = {
     borderRadius: radius,
     borderWidth: 1,
     borderColor: resolvedBorder,
     shadowColor: isDark ? '#000' : '#A06010',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: isDark ? 0.30 : 0.22,
-    shadowRadius: 28,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: isDark ? 0.28 : 0.18,
+    shadowRadius: 24,
+    elevation: 10,
   };
 
   if (Platform.OS === 'android') {
     return (
-      <View style={[outerStyle, style]} {...props}>
-        {/* Blur */}
+      <View style={[outerShell, style]} {...props}>
         <BlurView
           intensity={resolvedIntensity}
           tint={isDark ? 'dark' : 'light'}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: radius }}
           experimentalBlurMethod="dimezisBlurView"
         />
-        {/* Base tint */}
-        <View style={{
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: resolvedTint, borderRadius: radius,
-        }} />
-        {/* Glass shine layers */}
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: resolvedTint, borderRadius: radius }} />
         <GlassLayers />
-        {/* Content */}
-        <View style={{ borderRadius: radius, overflow: 'hidden' }}>
+        {/* Content wrapper — carries all layout/padding so children are correctly placed */}
+        <View style={[{ borderRadius: radius, overflow: 'hidden' }, contentStyle]}>
           {children}
         </View>
       </View>
@@ -158,30 +126,21 @@ export default function GlassCard({
 
   if (Platform.OS === 'ios') {
     return (
-      <View style={[outerStyle, { overflow: 'hidden' }, style]} {...props}>
-        <BlurView
-          intensity={resolvedIntensity}
-          tint={isDark ? 'dark' : 'light'}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-        />
+      <View style={[outerShell, { overflow: 'hidden' }, style]} {...props}>
+        <BlurView intensity={resolvedIntensity} tint={isDark ? 'dark' : 'light'} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: resolvedTint }} />
         <GlassLayers />
-        <View style={{ position: 'relative' }}>{children}</View>
+        <View style={contentStyle}>{children}</View>
       </View>
     );
   }
 
   // Web
   return (
-    <View style={[outerStyle, { overflow: 'hidden' }, style]} {...props}>
-      <View style={[StyleSheet.absoluteFill, webBlur, { backgroundColor: resolvedTint }]} />
+    <View style={[outerShell, { overflow: 'hidden', position: 'relative' }, style]} {...props}>
+      <View style={[StyleSheet.absoluteFill, { backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', backgroundColor: resolvedTint }]} />
       <GlassLayers />
-      <View style={{ position: 'relative' }}>{children}</View>
+      <View style={[{ position: 'relative' }, contentStyle]}>{children}</View>
     </View>
   );
 }
-
-const webBlur = {
-  backdropFilter: 'blur(28px)',
-  WebkitBackdropFilter: 'blur(28px)',
-};
