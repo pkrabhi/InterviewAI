@@ -36,10 +36,10 @@ const makeStyles = (COLORS) => StyleSheet.create({
     margin: SPACING.xs,
   },
   card: {
+    flex: 1,
     padding: SPACING.md,
     alignItems: 'flex-start',
     gap: SPACING.xs,
-    minHeight: 120,
   },
   emoji: { fontSize: 28, marginBottom: SPACING.xs },
   label: { fontSize: 15, fontWeight: '600', color: COLORS.text },
