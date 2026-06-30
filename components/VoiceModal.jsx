@@ -1,23 +1,30 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Modal, Animated, Platform,
+  Modal, Animated, Platform, useWindowDimensions,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS } from '../constants/theme';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../constants/theme';
+import { ms } from '../utils/responsive';
 
 const MAX_SECONDS = 120;
 
 export default function VoiceModal({ visible, transcript, onStop, onSend, onCancel }) {
+  const { width } = useWindowDimensions();
   const pulse1 = useRef(new Animated.Value(1)).current;
   const pulse2 = useRef(new Animated.Value(1)).current;
   const pulse3 = useRef(new Animated.Value(1)).current;
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef(null);
 
-  // Auto-stop at 2 minutes
+  const MIC_SIZE  = Math.round(width * 0.18);   // 18% of screen width
+  const RING1     = Math.round(width * 0.22);
+  const RING2     = Math.round(width * 0.28);
+  const RING3     = Math.round(width * 0.34);
+  const WRAP_SIZE = Math.round(width * 0.38);
+
   useEffect(() => {
     if (visible && elapsed >= MAX_SECONDS) {
       clearInterval(timerRef.current);
@@ -34,7 +41,6 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
       setElapsed(0);
       return;
     }
-
     const animate = (anim, delay) =>
       Animated.loop(
         Animated.sequence([
@@ -49,10 +55,7 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
     animate(pulse3, 560);
 
     setElapsed(0);
-    timerRef.current = setInterval(() => {
-      setElapsed((s) => s + 1);
-    }, 1000);
-
+    timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
     return () => clearInterval(timerRef.current);
   }, [visible]);
 
@@ -61,42 +64,60 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
   const mins = Math.floor(elapsed / 60);
   const secs = String(elapsed % 60).padStart(2, '0');
 
+  const cardRadius = ms(28);
+  const cardTintColor = Platform.OS === 'android' ? 'rgba(10, 14, 26, 0.92)' : 'rgba(15, 23, 41, 0.60)';
+
   return (
     <Modal visible={visible} transparent animationType="fade">
-      {/* Blurred overlay — BlurView cannot blur across Modal window boundaries on Android */}
       <View style={styles.overlay}>
+        {/* Overlay blur — iOS only (Android Modal can't blur across window layers) */}
         {Platform.OS === 'ios' && (
           <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
         )}
         <View style={[StyleSheet.absoluteFill, styles.overlayTint]} />
 
-        <View style={styles.card}>
-          {/* Glass background — iOS only; Android BlurView inside overflow:hidden is a no-op */}
-          {Platform.OS === 'ios' && (
-            <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
-          )}
-          <View style={[StyleSheet.absoluteFill, styles.cardTint]} />
+        {/* Card */}
+        <View style={[styles.card, { borderRadius: cardRadius, width: width - SPACING.lg * 2 }]}>
+          {Platform.OS === 'ios' ? (
+            <BlurView intensity={28} tint="dark" style={[StyleSheet.absoluteFill, { borderRadius: cardRadius }]} />
+          ) : Platform.OS === 'android' ? (
+            <BlurView
+              intensity={26}
+              tint="dark"
+              style={[StyleSheet.absoluteFill, { borderRadius: cardRadius }]}
+              experimentalBlurMethod="dimezisBlurView"
+            />
+          ) : null}
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: cardTintColor, borderRadius: cardRadius }]} />
 
           <View style={styles.content}>
             <Text style={styles.listeningLabel}>Listening</Text>
             <Text style={styles.listeningDots}>● ● ●</Text>
 
             {/* Pulsing mic rings */}
-            <View style={styles.micWrapper}>
-              <Animated.View style={[styles.ring, styles.ring3, { transform: [{ scale: pulse3 }] }]} />
-              <Animated.View style={[styles.ring, styles.ring2, { transform: [{ scale: pulse2 }] }]} />
-              <Animated.View style={[styles.ring, styles.ring1, { transform: [{ scale: pulse1 }] }]} />
+            <View style={[styles.micWrapper, { width: WRAP_SIZE, height: WRAP_SIZE }]}>
+              <Animated.View style={[styles.ring, {
+                width: RING3, height: RING3, borderRadius: RING3 / 2,
+                transform: [{ scale: pulse3 }], borderColor: 'rgba(99,102,241,0.15)',
+              }]} />
+              <Animated.View style={[styles.ring, {
+                width: RING2, height: RING2, borderRadius: RING2 / 2,
+                transform: [{ scale: pulse2 }], borderColor: 'rgba(99,102,241,0.30)',
+              }]} />
+              <Animated.View style={[styles.ring, {
+                width: RING1, height: RING1, borderRadius: RING1 / 2,
+                transform: [{ scale: pulse1 }], borderColor: 'rgba(99,102,241,0.55)',
+              }]} />
               <TouchableOpacity onPress={onStop} activeOpacity={0.85}>
                 <LinearGradient
                   colors={['#6366F1', '#7C3AED']}
-                  style={styles.micCircle}
+                  style={[styles.micCircle, { width: MIC_SIZE, height: MIC_SIZE, borderRadius: MIC_SIZE / 2 }]}
                 >
-                  <MaterialCommunityIcons name="microphone" size={34} color="#fff" />
+                  <MaterialCommunityIcons name="microphone" size={MIC_SIZE * 0.46} color="#fff" />
                 </LinearGradient>
               </TouchableOpacity>
             </View>
 
-            {/* Timer */}
             <View style={styles.timerRow}>
               <Text style={styles.timerHint}>Tap mic to stop  •  </Text>
               <Text style={[styles.timerText, isWarning && styles.timerWarning]}>
@@ -104,14 +125,12 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
               </Text>
             </View>
 
-            {/* Transcript box */}
             <View style={styles.transcriptBox}>
               <Text style={[styles.transcriptText, !transcript && styles.transcriptPlaceholder]}>
                 {transcript || 'Start speaking...'}
               </Text>
             </View>
 
-            {/* Actions */}
             <View style={styles.actions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
                 <Text style={styles.cancelText}>Cancel</Text>
@@ -123,11 +142,10 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
               >
                 <LinearGradient
                   colors={['#6366F1', '#818CF8']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={styles.sendBtn}
                 >
-                  <MaterialCommunityIcons name="send" size={16} color="#fff" />
+                  <MaterialCommunityIcons name="send" size={ms(16)} color="#fff" />
                   <Text style={styles.sendText}>Send</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -144,20 +162,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
   },
   overlayTint: {
-    backgroundColor: 'rgba(5, 8, 22, 0.75)',
+    backgroundColor: 'rgba(5, 8, 22, 0.78)',
   },
   card: {
-    width: '100%',
-    borderRadius: 28,
-    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-  },
-  cardTint: {
-    backgroundColor: Platform.OS === 'android' ? 'rgba(15, 23, 41, 0.92)' : 'rgba(15, 23, 41, 0.60)',
+    borderColor: 'rgba(255,255,255,0.14)',
   },
   content: {
     padding: SPACING.xl,
@@ -166,47 +178,26 @@ const styles = StyleSheet.create({
   },
   listeningLabel: {
     color: COLORS.primaryLight,
-    fontSize: 15,
+    fontSize: FONT_SIZE.xs,
     fontWeight: '700',
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
   listeningDots: {
     color: COLORS.primary,
-    fontSize: 10,
+    fontSize: ms(10),
     letterSpacing: 4,
     marginTop: -SPACING.md,
   },
   micWrapper: {
-    width: 150,
-    height: 150,
     alignItems: 'center',
     justifyContent: 'center',
   },
   ring: {
     position: 'absolute',
-    borderRadius: RADIUS.full,
     borderWidth: 1.5,
   },
-  ring1: {
-    width: 95,
-    height: 95,
-    borderColor: 'rgba(99,102,241,0.55)',
-  },
-  ring2: {
-    width: 120,
-    height: 120,
-    borderColor: 'rgba(99,102,241,0.30)',
-  },
-  ring3: {
-    width: 150,
-    height: 150,
-    borderColor: 'rgba(99,102,241,0.15)',
-  },
   micCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: RADIUS.full,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#6366F1',
@@ -220,9 +211,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: -SPACING.sm,
   },
-  timerHint: { color: 'rgba(255,255,255,0.35)', fontSize: 13 },
+  timerHint: { color: 'rgba(255,255,255,0.35)', fontSize: FONT_SIZE.sm },
   timerText: {
-    fontSize: 13,
+    fontSize: FONT_SIZE.sm,
     fontWeight: '700',
     color: COLORS.primaryLight,
     fontFamily: 'monospace',
@@ -230,7 +221,7 @@ const styles = StyleSheet.create({
   timerWarning: { color: COLORS.danger },
   transcriptBox: {
     width: '100%',
-    minHeight: 80,
+    minHeight: ms(80),
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: RADIUS.md,
     borderWidth: 1,
@@ -240,8 +231,8 @@ const styles = StyleSheet.create({
   },
   transcriptText: {
     color: COLORS.text,
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: FONT_SIZE.md,
+    lineHeight: ms(22),
     textAlign: 'center',
   },
   transcriptPlaceholder: {
@@ -262,7 +253,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  cancelText: { color: 'rgba(255,255,255,0.5)', fontWeight: '600', fontSize: 15 },
+  cancelText: { color: 'rgba(255,255,255,0.5)', fontWeight: '600', fontSize: FONT_SIZE.md },
   sendBtnWrapper: {
     flex: 2,
     borderRadius: RADIUS.full,
@@ -276,5 +267,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: SPACING.xs,
   },
-  sendText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  sendText: { color: '#fff', fontWeight: '700', fontSize: FONT_SIZE.md },
 });

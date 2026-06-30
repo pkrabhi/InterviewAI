@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS } from '../../constants/theme';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../constants/theme';
 import ScreenBackground from '../../components/ScreenBackground';
 import GlassCard from '../../components/GlassCard';
 import useAuthStore from '../../store/useAuthStore';
@@ -184,12 +184,12 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.md,
   },
   greeting: {
-    fontSize: 22,
+    fontSize: FONT_SIZE.xl,
     color: COLORS.text,
     fontWeight: 'bold',
     letterSpacing: -0.3,
   },
-  subGreeting: { fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
+  subGreeting: { fontSize: FONT_SIZE.sm, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
   planBadge: {
     paddingHorizontal: SPACING.sm,
     paddingVertical: 5,
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(245,158,11,0.15)',
     borderColor: 'rgba(245,158,11,0.35)',
   },
-  planText: { fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.45)' },
+  planText: { fontSize: FONT_SIZE.xs, fontWeight: '700', color: 'rgba(255,255,255,0.45)' },
   planTextPro: { color: COLORS.accent },
   ctaWrapper: {
     marginHorizontal: SPACING.md,
@@ -235,12 +235,12 @@ const styles = StyleSheet.create({
   ctaContent: { flex: 1 },
   ctaTitle: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: FONT_SIZE.xl,
     fontWeight: 'bold',
     marginBottom: 4,
     letterSpacing: -0.3,
   },
-  ctaSubtitle: { color: 'rgba(255,255,255,0.65)', fontSize: 13 },
+  ctaSubtitle: { color: 'rgba(255,255,255,0.65)', fontSize: FONT_SIZE.sm },
   ctaIcon: { marginLeft: SPACING.sm },
   statsRow: {
     flexDirection: 'row',
@@ -254,11 +254,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
   },
-  statValue: { color: COLORS.text, fontSize: 22, fontWeight: 'bold' },
-  statLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 11 },
+  statValue: { color: COLORS.text, fontSize: FONT_SIZE.xl, fontWeight: 'bold' },
+  statLabel: { color: 'rgba(255,255,255,0.4)', fontSize: FONT_SIZE.xs },
   sectionTitle: {
     color: COLORS.text,
-    fontSize: 16,
+    fontSize: FONT_SIZE.lg,
     fontWeight: '700',
     paddingHorizontal: SPACING.lg,
     marginBottom: SPACING.sm,
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
   },
   chipEmoji: { fontSize: 16 },
-  chipLabel: { color: COLORS.text, fontSize: 13, fontWeight: '500' },
+  chipLabel: { color: COLORS.text, fontSize: FONT_SIZE.sm, fontWeight: '500' },
   emptyCard: {
     padding: SPACING.xl,
     marginHorizontal: SPACING.md,
@@ -296,14 +296,14 @@ const styles = StyleSheet.create({
   sessionLeft: { gap: 4 },
   sessionRole: {
     color: COLORS.text,
-    fontSize: 14,
+    fontSize: FONT_SIZE.sm,
     fontWeight: '500',
     textTransform: 'capitalize',
   },
-  sessionDate: { color: 'rgba(255,255,255,0.35)', fontSize: 12 },
-  sessionScore: { fontSize: 22, fontWeight: 'bold' },
+  sessionDate: { color: 'rgba(255,255,255,0.35)', fontSize: FONT_SIZE.xs },
+  sessionScore: { fontSize: FONT_SIZE.xl, fontWeight: 'bold' },
   sessionActive: {
-    fontSize: 11,
+    fontSize: FONT_SIZE.xs,
     fontWeight: '700',
     color: COLORS.accent,
     letterSpacing: 0.5,

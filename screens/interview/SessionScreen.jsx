@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   FlatList, KeyboardAvoidingView, Platform, Alert, Animated,
+  useWindowDimensions,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,7 +12,8 @@ import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
-import { COLORS, SPACING, RADIUS } from '../../constants/theme';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../constants/theme';
+import { ms } from '../../utils/responsive';
 import MessageBubble    from '../../components/MessageBubble';
 import TypingIndicator  from '../../components/TypingIndicator';
 import HintPanel        from '../../components/HintPanel';
@@ -56,6 +58,7 @@ const stopSpeaking = () => {
 // ── Main component ────────────────────────────────────────────────────
 export default function SessionScreen({ route, navigation }) {
   const { role, level, type, jdText, resumeSummary, resumeSessionId } = route.params || {};
+  const { width } = useWindowDimensions();
 
   const [inputText, setInputText]       = useState('');
   const [timer, setTimer]               = useState(0);
@@ -449,7 +452,7 @@ export default function SessionScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0E1A',
+    backgroundColor: COLORS.bg,
     ...(Platform.OS === 'web' ? {
       height: '100vh',
       maxHeight: '100vh',
@@ -491,9 +494,9 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
-  avatarText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  interviewerName: { color: COLORS.text, fontWeight: '600', fontSize: 15 },
-  roleLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 12 },
+  avatarText: { color: '#fff', fontWeight: 'bold', fontSize: FONT_SIZE.md },
+  interviewerName: { color: COLORS.text, fontWeight: '600', fontSize: FONT_SIZE.md },
+  roleLabel: { color: 'rgba(255,255,255,0.4)', fontSize: FONT_SIZE.xs },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   headerIconBtn: { padding: 6 },
   timerPill: {
@@ -504,7 +507,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
   },
-  timer: { color: 'rgba(255,255,255,0.55)', fontSize: 13, fontFamily: 'monospace' },
+  timer: { color: 'rgba(255,255,255,0.55)', fontSize: FONT_SIZE.sm, fontFamily: 'monospace' },
   endBtn: {
     borderWidth: 1,
     borderColor: 'rgba(239,68,68,0.5)',
@@ -513,12 +516,12 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     backgroundColor: 'rgba(239,68,68,0.08)',
   },
-  endBtnText: { color: COLORS.danger, fontSize: 13, fontWeight: '700' },
+  endBtnText: { color: COLORS.danger, fontSize: FONT_SIZE.sm, fontWeight: '700' },
   progressBg: { height: 2, backgroundColor: 'rgba(255,255,255,0.06)' },
   progressFill: { height: 2, backgroundColor: COLORS.primary },
   progressLabel: {
     color: 'rgba(255,255,255,0.3)',
-    fontSize: 11,
+    fontSize: FONT_SIZE.xs,
     textAlign: 'center',
     paddingVertical: SPACING.xs,
   },

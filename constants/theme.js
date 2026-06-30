@@ -1,7 +1,9 @@
+import { ms } from '../utils/responsive';
+
 export const COLORS = {
-  bg:           '#0F1729',
-  card:         '#1E2D4A',
-  cardLight:    '#243656',
+  bg:           '#0A0E1A',
+  card:         '#141C2E',
+  cardLight:    '#1A2440',
   primary:      '#6366F1',
   primaryLight: '#818CF8',
   accent:       '#F59E0B',
@@ -20,19 +22,31 @@ export const FONTS = {
   mono:     'SpaceMono_400Regular',
 };
 
+// All spacing and radius values scale with screen width (moderate scale)
 export const SPACING = {
-  xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
-  xxl: 48,
+  xs:  ms(4),
+  sm:  ms(8),
+  md:  ms(16),
+  lg:  ms(24),
+  xl:  ms(32),
+  xxl: ms(48),
 };
 
 export const RADIUS = {
-  sm:   8,
-  md:   12,
-  lg:   16,
-  xl:   24,
+  sm:   ms(8),
+  md:   ms(12),
+  lg:   ms(16),
+  xl:   ms(24),
   full: 999,
+};
+
+// Responsive font scale — use these in StyleSheets instead of hard-coding px
+export const FONT_SIZE = {
+  xs:   ms(11),
+  sm:   ms(13),
+  md:   ms(15),
+  lg:   ms(18),
+  xl:   ms(22),
+  xxl:  ms(28),
+  hero: ms(34),
 };
