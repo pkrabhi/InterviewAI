@@ -88,14 +88,12 @@ export default function SetupScreen({ navigation, route }) {
 
   // ── Step 1: Role ───────────────────────────────────────────────────
   const renderStep1 = () => (
-    <View style={{ flex: 1, minHeight: 0 }}>
-      {/* Scrollable cards area */}
+    <>
       <ScrollView
-        style={{ flex: 1, minHeight: 0 }}
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs, paddingBottom: SPACING.md }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        nestedScrollEnabled={true}
       >
         <Text style={styles.stepTitle}>What role are you interviewing for?</Text>
         <View style={styles.roleGrid}>
@@ -119,7 +117,7 @@ export default function SetupScreen({ navigation, route }) {
         </View>
       </ScrollView>
 
-      {/* Next button — fixed at bottom, always visible */}
+      {/* Next button — sits below ScrollView, always visible */}
       <GlassCard
         style={{ borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderBottomWidth: 0, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md }}
         intensity={20}
@@ -141,13 +139,13 @@ export default function SetupScreen({ navigation, route }) {
           </LinearGradient>
         </TouchableOpacity>
       </GlassCard>
-    </View>
+    </>
   );
 
   // ── Step 2: Level + Type ───────────────────────────────────────────
   const renderStep2 = () => (
-    <View style={{ flex: 1, minHeight: 0 }}>
-      <ScrollView style={{ flex: 1, minHeight: 0 }} contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs, paddingBottom: SPACING.md }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" nestedScrollEnabled={true}>
+    <>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs, paddingBottom: SPACING.md }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Text style={styles.stepTitle}>Your experience level?</Text>
         <View style={styles.levelRow}>
           {LEVELS.map((level) => {
@@ -192,7 +190,6 @@ export default function SetupScreen({ navigation, route }) {
         </View>
       </ScrollView>
 
-      {/* Nav row — pinned at bottom, always visible */}
       <GlassCard
         style={{ borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderBottomWidth: 0, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
         intensity={20}
@@ -213,13 +210,13 @@ export default function SetupScreen({ navigation, route }) {
           </LinearGradient>
         </TouchableOpacity>
       </GlassCard>
-    </View>
+    </>
   );
 
   // ── Step 3: Resume upload ──────────────────────────────────────────
   const renderStep3 = () => (
-    <View style={{ flex: 1, minHeight: 0 }}>
-      <ScrollView style={{ flex: 1, minHeight: 0 }} contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs, paddingBottom: SPACING.md }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" nestedScrollEnabled={true}>
+    <>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs, paddingBottom: SPACING.md }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Text style={styles.stepTitle}>Upload your Resume (optional)</Text>
         <Text style={styles.stepSub}>AI will tailor every question to your actual skills, projects, and experience.</Text>
 
@@ -261,7 +258,6 @@ export default function SetupScreen({ navigation, route }) {
         ) : null}
       </ScrollView>
 
-      {/* Nav row — pinned at bottom, always visible */}
       <GlassCard
         style={{ borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderBottomWidth: 0, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
         intensity={20}
@@ -287,13 +283,13 @@ export default function SetupScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
       </GlassCard>
-    </View>
+    </>
   );
 
   // ── Step 4: JD paste ───────────────────────────────────────────────
   const renderStep4 = () => (
-    <View style={{ flex: 1, minHeight: 0 }}>
-      <ScrollView style={{ flex: 1, minHeight: 0 }} contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs, paddingBottom: SPACING.md }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" nestedScrollEnabled={true}>
+    <>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs, paddingBottom: SPACING.md }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Text style={styles.stepTitle}>Paste a Job Description (optional)</Text>
         <Text style={styles.stepSub}>AI will tailor every question to the specific JD. Great for company-specific prep.</Text>
         <GlassCard style={styles.jdCard} intensity={22}>
@@ -310,7 +306,6 @@ export default function SetupScreen({ navigation, route }) {
         </GlassCard>
       </ScrollView>
 
-      {/* Nav row — pinned at bottom, always visible */}
       <GlassCard
         style={{ borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderBottomWidth: 0, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
         intensity={20}
@@ -334,7 +329,7 @@ export default function SetupScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
       </GlassCard>
-    </View>
+    </>
   );
 
   return (
