@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, ActivityIndicator, useWindowDimensions,
+  ScrollView, ActivityIndicator, useWindowDimensions, Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -60,15 +60,34 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {/* CTA */}
-        <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('InterviewSetup')} style={styles.ctaWrapper}>
-          <LinearGradient colors={['#5B5FEF', '#7C3AED']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ctaCard}>
-            <View style={styles.ctaGlow} />
+        <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.navigate('InterviewSetup')} style={styles.ctaWrapper}>
+          <GlassCard
+            style={styles.ctaCard}
+            intensity={45}
+            tint={COLORS.primary + '40'}
+            borderColor={COLORS.primary + '80'}
+            borderRadius={RADIUS.xl}
+          >
+            {/* Inner colour gradient so glass has rich colour to blur over */}
+            <LinearGradient
+              colors={[COLORS.primary + 'CC', '#7C3AED99', 'transparent']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+            />
+            {/* Glow orb */}
+            <View style={styles.ctaGlow} pointerEvents="none" />
             <View style={{ flex: 1 }}>
               <Text style={styles.ctaTitle}>Start New Interview</Text>
               <Text style={styles.ctaSub}>Practice with AI Interviewer Aryan</Text>
             </View>
-            <MaterialCommunityIcons name="arrow-right-circle" size={Math.round(width * 0.11)} color="rgba(255,255,255,0.9)" />
-          </LinearGradient>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.30)', 'rgba(255,255,255,0.12)']}
+              style={{ width: Math.round(width * 0.11), height: Math.round(width * 0.11), borderRadius: Math.round(width * 0.055), alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' }}
+            >
+              <MaterialCommunityIcons name="arrow-right" size={Math.round(width * 0.065)} color="#fff" />
+            </LinearGradient>
+          </GlassCard>
         </TouchableOpacity>
 
         {/* Stats */}
@@ -178,18 +197,18 @@ const makeStyles = (COLORS, width) => StyleSheet.create({
 
   ctaWrapper: {
     marginHorizontal: SPACING.md, marginBottom: SPACING.md,
-    borderRadius: RADIUS.xl, overflow: 'hidden',
+    borderRadius: RADIUS.xl,
     elevation: 14,
   },
   ctaCard: {
     flexDirection: 'row', alignItems: 'center',
     padding: SPACING.lg, paddingVertical: SPACING.xl,
-    borderRadius: RADIUS.xl, overflow: 'hidden',
+    borderRadius: RADIUS.xl, minHeight: 110,
   },
   ctaGlow: {
     position: 'absolute', top: -40, left: '30%',
-    width: 120, height: 120, borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    width: 140, height: 140, borderRadius: 70,
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   ctaTitle: { color: '#fff', fontSize: FONT_SIZE.xl, fontWeight: 'bold', marginBottom: 4, letterSpacing: -0.3 },
   ctaSub:   { color: 'rgba(255,255,255,0.7)', fontSize: FONT_SIZE.sm },
