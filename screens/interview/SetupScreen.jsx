@@ -88,96 +88,115 @@ export default function SetupScreen({ navigation, route }) {
 
   // ── Step 1: Role ───────────────────────────────────────────────────
   const renderStep1 = () => (
-    <ScrollView
-      style={styles.stepContent}
-      contentContainerStyle={{ paddingBottom: SPACING.xxl }}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.stepTitle}>What role are you interviewing for?</Text>
-      <View style={styles.roleGrid}>
-        {ROLES.reduce((rows, item, i) => {
-          if (i % 2 === 0) rows.push([]);
-          rows[rows.length - 1].push(item);
-          return rows;
-        }, []).map((row, ri) => (
-          <View key={ri} style={{ flexDirection: 'row' }}>
-            {row.map((item) => (
-              <RoleCard
-                key={item.id}
-                role={item}
-                selected={selectedRole?.id === item.id}
-                onPress={() => setSelectedRole(item)}
-              />
-            ))}
-            {row.length === 1 && <View style={{ flex: 1, margin: SPACING.xs }} />}
-          </View>
-        ))}
-      </View>
-      <TouchableOpacity
-        style={[styles.nextBtn, !selectedRole && styles.nextBtnDisabled]}
-        onPress={() => selectedRole && setStep(2)}
-        disabled={!selectedRole}
+    <View style={{ flex: 1 }}>
+      {/* Scrollable cards area */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs, paddingBottom: SPACING.md }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <LinearGradient
-          colors={selectedRole ? [COLORS.primary, COLORS.primaryLight] : ['rgba(128,128,128,0.2)', 'rgba(128,128,128,0.2)']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={styles.nextBtnGradient}
+        <Text style={styles.stepTitle}>What role are you interviewing for?</Text>
+        <View style={styles.roleGrid}>
+          {ROLES.reduce((rows, item, i) => {
+            if (i % 2 === 0) rows.push([]);
+            rows[rows.length - 1].push(item);
+            return rows;
+          }, []).map((row, ri) => (
+            <View key={ri} style={{ flexDirection: 'row' }}>
+              {row.map((item) => (
+                <RoleCard
+                  key={item.id}
+                  role={item}
+                  selected={selectedRole?.id === item.id}
+                  onPress={() => setSelectedRole(item)}
+                />
+              ))}
+              {row.length === 1 && <View style={{ flex: 1, margin: SPACING.xs }} />}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+
+      {/* Next button — fixed at bottom, always visible */}
+      <GlassCard
+        style={{ borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderBottomWidth: 0, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md }}
+        intensity={20}
+        borderColor={COLORS.glassBorder}
+      >
+        <TouchableOpacity
+          onPress={() => selectedRole && setStep(2)}
+          disabled={!selectedRole}
+          style={{ borderRadius: RADIUS.full, overflow: 'hidden', opacity: !selectedRole ? 0.4 : 1 }}
         >
-          <Text style={styles.nextBtnText}>Next</Text>
-          <MaterialCommunityIcons name="arrow-right" size={18} color="#fff" />
-        </LinearGradient>
-      </TouchableOpacity>
-    </ScrollView>
+          <LinearGradient
+            colors={[COLORS.primary, COLORS.primaryLight]}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.nextBtnGradient}
+          >
+            <Text style={styles.nextBtnText}>
+              {selectedRole ? `Next  →  ${selectedRole.label}` : 'Select a role to continue'}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </GlassCard>
+    </View>
   );
 
   // ── Step 2: Level + Type ───────────────────────────────────────────
   const renderStep2 = () => (
-    <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
-      <Text style={styles.stepTitle}>Your experience level?</Text>
-      <View style={styles.levelRow}>
-        {LEVELS.map((level) => {
-          const active = selectedLevel === level;
-          return (
-            <TouchableOpacity key={level} onPress={() => setSelectedLevel(level)} style={{ flex: 1 }}>
-              <GlassCard
-                style={[styles.levelCard, active && { borderColor: COLORS.primary, borderWidth: 2 }]}
-                intensity={active ? 40 : 22}
-                tint={active ? COLORS.primary + '20' : undefined}
-                borderColor={active ? COLORS.primary : undefined}
-              >
-                <Text style={[styles.levelText, active && { color: COLORS.primaryLight, fontWeight: '700' }]}>
-                  {level}
-                </Text>
-              </GlassCard>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs, paddingBottom: SPACING.md }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <Text style={styles.stepTitle}>Your experience level?</Text>
+        <View style={styles.levelRow}>
+          {LEVELS.map((level) => {
+            const active = selectedLevel === level;
+            return (
+              <TouchableOpacity key={level} onPress={() => setSelectedLevel(level)} style={{ flex: 1 }}>
+                <GlassCard
+                  style={[styles.levelCard, active && { borderColor: COLORS.primary, borderWidth: 2 }]}
+                  intensity={active ? 40 : 22}
+                  tint={active ? COLORS.primary + '20' : undefined}
+                  borderColor={active ? COLORS.primary : undefined}
+                >
+                  <Text style={[styles.levelText, active && { color: COLORS.primaryLight, fontWeight: '700' }]}>
+                    {level}
+                  </Text>
+                </GlassCard>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-      <Text style={[styles.stepTitle, { marginTop: SPACING.lg }]}>Interview type?</Text>
-      <View style={styles.typeGrid}>
-        {INTERVIEW_TYPES.map((type) => {
-          const active = selectedType?.id === type.id;
-          return (
-            <TouchableOpacity key={type.id} onPress={() => setSelectedType(type)} style={styles.typeWrapper}>
-              <GlassCard
-                style={[styles.typeCard, active && { borderColor: COLORS.primary, borderWidth: 2 }]}
-                intensity={active ? 40 : 22}
-                tint={active ? COLORS.primary + '20' : undefined}
-                borderColor={active ? COLORS.primary : undefined}
-              >
-                <Text style={styles.typeEmoji}>{type.emoji}</Text>
-                <Text style={[styles.typeLabel, active && { color: COLORS.primaryLight, fontWeight: '700' }]}>
-                  {type.label}
-                </Text>
-              </GlassCard>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+        <Text style={[styles.stepTitle, { marginTop: SPACING.lg }]}>Interview type?</Text>
+        <View style={styles.typeGrid}>
+          {INTERVIEW_TYPES.map((type) => {
+            const active = selectedType?.id === type.id;
+            return (
+              <TouchableOpacity key={type.id} onPress={() => setSelectedType(type)} style={styles.typeWrapper}>
+                <GlassCard
+                  style={[styles.typeCard, active && { borderColor: COLORS.primary, borderWidth: 2 }]}
+                  intensity={active ? 40 : 22}
+                  tint={active ? COLORS.primary + '20' : undefined}
+                  borderColor={active ? COLORS.primary : undefined}
+                >
+                  <Text style={styles.typeEmoji}>{type.emoji}</Text>
+                  <Text style={[styles.typeLabel, active && { color: COLORS.primaryLight, fontWeight: '700' }]}>
+                    {type.label}
+                  </Text>
+                </GlassCard>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </ScrollView>
 
-      <View style={styles.navRow}>
+      {/* Nav row — pinned at bottom, always visible */}
+      <GlassCard
+        style={{ borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderBottomWidth: 0, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        intensity={20}
+        borderColor={COLORS.glassBorder}
+      >
         <TouchableOpacity style={styles.backBtn} onPress={() => setStep(1)}>
           <MaterialCommunityIcons name="arrow-left" size={18} color={COLORS.textMuted} />
           <Text style={styles.backBtnText}>Back</Text>
@@ -192,54 +211,61 @@ export default function SetupScreen({ navigation, route }) {
             <MaterialCommunityIcons name="arrow-right" size={18} color="#fff" />
           </LinearGradient>
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </GlassCard>
+    </View>
   );
 
   // ── Step 3: Resume upload ──────────────────────────────────────────
   const renderStep3 = () => (
-    <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
-      <Text style={styles.stepTitle}>Upload your Resume (optional)</Text>
-      <Text style={styles.stepSub}>AI will tailor every question to your actual skills, projects, and experience.</Text>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs, paddingBottom: SPACING.md }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <Text style={styles.stepTitle}>Upload your Resume (optional)</Text>
+        <Text style={styles.stepSub}>AI will tailor every question to your actual skills, projects, and experience.</Text>
 
-      <TouchableOpacity onPress={pickResume} disabled={uploading} activeOpacity={0.8}>
-        <GlassCard
-          style={[styles.uploadBox, resumeFile && { borderColor: COLORS.success }]}
-          intensity={22}
-          borderColor={resumeFile ? COLORS.success : COLORS.glassBorder}
-        >
-          {uploading ? (
-            <>
-              <ActivityIndicator color={COLORS.primary} size="large" />
-              <Text style={[styles.uploadHint, { color: COLORS.primary }]}>Analysing your resume...</Text>
-            </>
-          ) : resumeFile ? (
-            <>
-              <MaterialCommunityIcons name="file-check" size={40} color={COLORS.success} />
-              <Text style={[styles.uploadTitle, { color: COLORS.success }]} numberOfLines={1}>{resumeFile.name}</Text>
-              <Text style={styles.uploadHint}>Tap to change</Text>
-            </>
-          ) : (
-            <>
-              <MaterialCommunityIcons name="file-upload-outline" size={40} color={COLORS.primary} />
-              <Text style={styles.uploadTitle}>Tap to upload PDF</Text>
-              <Text style={styles.uploadHint}>Max 5MB • PDF only</Text>
-            </>
-          )}
-        </GlassCard>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={pickResume} disabled={uploading} activeOpacity={0.8}>
+          <GlassCard
+            style={[styles.uploadBox, resumeFile && { borderColor: COLORS.success }]}
+            intensity={22}
+            borderColor={resumeFile ? COLORS.success : COLORS.glassBorder}
+          >
+            {uploading ? (
+              <>
+                <ActivityIndicator color={COLORS.primary} size="large" />
+                <Text style={[styles.uploadHint, { color: COLORS.primary }]}>Analysing your resume...</Text>
+              </>
+            ) : resumeFile ? (
+              <>
+                <MaterialCommunityIcons name="file-check" size={40} color={COLORS.success} />
+                <Text style={[styles.uploadTitle, { color: COLORS.success }]} numberOfLines={1}>{resumeFile.name}</Text>
+                <Text style={styles.uploadHint}>Tap to change</Text>
+              </>
+            ) : (
+              <>
+                <MaterialCommunityIcons name="file-upload-outline" size={40} color={COLORS.primary} />
+                <Text style={styles.uploadTitle}>Tap to upload PDF</Text>
+                <Text style={styles.uploadHint}>Max 5MB • PDF only</Text>
+              </>
+            )}
+          </GlassCard>
+        </TouchableOpacity>
 
-      {resumeSummary ? (
-        <GlassCard style={styles.summaryBox} intensity={20} tint={COLORS.primary + '15'} borderColor={COLORS.primary + '44'}>
-          <View style={styles.summaryHeader}>
-            <MaterialCommunityIcons name="brain" size={16} color={COLORS.primary} />
-            <Text style={[styles.summaryTitle, { color: COLORS.primary }]}>AI detected from your resume</Text>
-          </View>
-          <Text style={[styles.stepSub, { marginBottom: 0 }]}>{resumeSummary}</Text>
-        </GlassCard>
-      ) : null}
+        {resumeSummary ? (
+          <GlassCard style={styles.summaryBox} intensity={20} tint={COLORS.primary + '15'} borderColor={COLORS.primary + '44'}>
+            <View style={styles.summaryHeader}>
+              <MaterialCommunityIcons name="brain" size={16} color={COLORS.primary} />
+              <Text style={[styles.summaryTitle, { color: COLORS.primary }]}>AI detected from your resume</Text>
+            </View>
+            <Text style={[styles.stepSub, { marginBottom: 0 }]}>{resumeSummary}</Text>
+          </GlassCard>
+        ) : null}
+      </ScrollView>
 
-      <View style={styles.navRow}>
+      {/* Nav row — pinned at bottom, always visible */}
+      <GlassCard
+        style={{ borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderBottomWidth: 0, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        intensity={20}
+        borderColor={COLORS.glassBorder}
+      >
         <TouchableOpacity style={styles.backBtn} onPress={() => setStep(2)}>
           <MaterialCommunityIcons name="arrow-left" size={18} color={COLORS.textMuted} />
           <Text style={styles.backBtnText}>Back</Text>
@@ -259,29 +285,36 @@ export default function SetupScreen({ navigation, route }) {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+      </GlassCard>
+    </View>
   );
 
   // ── Step 4: JD paste ───────────────────────────────────────────────
   const renderStep4 = () => (
-    <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>Paste a Job Description (optional)</Text>
-      <Text style={styles.stepSub}>AI will tailor every question to the specific JD. Great for company-specific prep.</Text>
-      <GlassCard style={styles.jdCard} intensity={22}>
-        <TextInput
-          style={[styles.jdInput, { color: COLORS.text }]}
-          multiline
-          numberOfLines={8}
-          placeholder="Paste the job description here..."
-          placeholderTextColor={COLORS.textMuted}
-          value={jdText}
-          onChangeText={setJdText}
-          textAlignVertical="top"
-        />
-      </GlassCard>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs, paddingBottom: SPACING.md }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <Text style={styles.stepTitle}>Paste a Job Description (optional)</Text>
+        <Text style={styles.stepSub}>AI will tailor every question to the specific JD. Great for company-specific prep.</Text>
+        <GlassCard style={styles.jdCard} intensity={22}>
+          <TextInput
+            style={[styles.jdInput, { color: COLORS.text }]}
+            multiline
+            numberOfLines={8}
+            placeholder="Paste the job description here..."
+            placeholderTextColor={COLORS.textMuted}
+            value={jdText}
+            onChangeText={setJdText}
+            textAlignVertical="top"
+          />
+        </GlassCard>
+      </ScrollView>
 
-      <View style={styles.navRow}>
+      {/* Nav row — pinned at bottom, always visible */}
+      <GlassCard
+        style={{ borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, borderBottomWidth: 0, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        intensity={20}
+        borderColor={COLORS.glassBorder}
+      >
         <TouchableOpacity style={styles.backBtn} onPress={() => setStep(3)}>
           <MaterialCommunityIcons name="arrow-left" size={18} color={COLORS.textMuted} />
           <Text style={styles.backBtnText}>Back</Text>
@@ -299,7 +332,7 @@ export default function SetupScreen({ navigation, route }) {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-      </View>
+      </GlassCard>
     </View>
   );
 
