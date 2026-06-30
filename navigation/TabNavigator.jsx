@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -20,7 +21,9 @@ export default function TabNavigator() {
           borderTopWidth:  1,
           height:          60,
           paddingBottom:   8,
+          ...(Platform.OS === 'web' ? { position: 'sticky', bottom: 0, zIndex: 100 } : {}),
         },
+        sceneContainerStyle: Platform.OS === 'web' ? { height: '100%', overflow: 'hidden' } : {},
         tabBarActiveTintColor:   COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarIcon: ({ color, size }) => {

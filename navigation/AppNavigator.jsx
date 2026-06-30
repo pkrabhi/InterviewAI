@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Platform } from 'react-native';
+import { TouchableOpacity, Platform, View } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -24,7 +24,8 @@ export default function AppNavigator() {
         headerStyle:      { backgroundColor: COLORS.card },
         headerTintColor:  COLORS.text,
         headerTitleStyle: { fontWeight: '600' },
-        cardStyle:        { backgroundColor: COLORS.bg },
+        cardStyle:        { backgroundColor: COLORS.bg, flex: 1, ...(Platform.OS === 'web' ? { height: '100%', overflow: 'hidden' } : {}) },
+        animationEnabled: Platform.OS !== 'web',
       }}
     >
       <Stack.Screen

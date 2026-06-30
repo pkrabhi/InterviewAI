@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import useThemeStore from '../store/useThemeStore';
 
@@ -65,7 +65,7 @@ export default function ScreenBackground({ children, style, variant = 'default' 
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, ...(Platform.OS === 'web' ? { height: '100%' } : {}) },
   orb:  { position: 'absolute', overflow: 'hidden' },
   fill: { flex: 1, borderRadius: 9999 },
 });

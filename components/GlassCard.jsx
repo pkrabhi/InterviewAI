@@ -135,11 +135,25 @@ export default function GlassCard({
     );
   }
 
-  // Web
+  // Web — lightweight single layer (no heavy gradient stack, smooth performance)
+  const webShine = isDark
+    ? 'linear-gradient(160deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 40%, transparent 100%)'
+    : 'linear-gradient(160deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.18) 40%, transparent 100%)';
+
   return (
-    <View style={[outerShell, { overflow: 'hidden', position: 'relative' }, style]} {...props}>
-      <View style={[StyleSheet.absoluteFill, { backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', backgroundColor: resolvedTint }]} />
-      <GlassLayers />
+    <View
+      style={[outerShell, {
+        overflow: 'hidden',
+        position: 'relative',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        backgroundColor: resolvedTint,
+        backgroundImage: webShine,
+      }, style]}
+      {...props}
+    >
+      {/* Top rim highlight */}
+      <View style={{ position: 'absolute', top: 0, left: 4, right: 4, height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.80)', borderRadius: 1 }} />
       <View style={[{ position: 'relative' }, contentStyle]}>{children}</View>
     </View>
   );
