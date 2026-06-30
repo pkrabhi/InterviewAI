@@ -1,75 +1,56 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { COLORS, SPACING, RADIUS } from '../constants/theme';
+import { SPACING, RADIUS } from '../constants/theme';
+import useThemeStore from '../store/useThemeStore';
+import GlassCard from './GlassCard';
 
 export default function RoleCard({ role, selected, onPress }) {
+  const { COLORS } = useThemeStore();
+  const styles = useMemo(() => makeStyles(COLORS), [COLORS]);
+
   return (
-    <TouchableOpacity
-      style={[styles.card, selected && styles.cardSelected]}
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <Text style={styles.emoji}>{role.emoji}</Text>
-      <Text style={[styles.label, selected && styles.labelSelected]}>{role.label}</Text>
-      <View style={styles.topics}>
-        {role.topics.map((topic) => (
-          <View key={topic} style={[styles.chip, selected && styles.chipSelected]}>
-            <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{topic}</Text>
-          </View>
-        ))}
-      </View>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.wrapper}>
+      <GlassCard
+        style={[styles.card, selected && { borderColor: COLORS.primary, borderWidth: 2 }]}
+        intensity={selected ? 40 : 28}
+        tint={selected ? COLORS.primary + '22' : undefined}
+        borderColor={selected ? COLORS.primary : undefined}
+      >
+        <Text style={styles.emoji}>{role.emoji}</Text>
+        <Text style={[styles.label, selected && { color: COLORS.primaryLight }]}>{role.label}</Text>
+        <View style={styles.topics}>
+          {role.topics.map((topic) => (
+            <View key={topic} style={[styles.chip, selected && { backgroundColor: COLORS.primary + '33', borderColor: COLORS.primary + '55' }]}>
+              <Text style={[styles.chipText, selected && { color: COLORS.primaryLight }]}>{topic}</Text>
+            </View>
+          ))}
+        </View>
+      </GlassCard>
     </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
+const makeStyles = (COLORS) => StyleSheet.create({
+  wrapper: {
     flex: 1,
-    backgroundColor: COLORS.card,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
     margin: SPACING.xs,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
+  },
+  card: {
+    padding: SPACING.md,
     alignItems: 'flex-start',
     gap: SPACING.xs,
+    minHeight: 120,
   },
-  cardSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.cardLight,
-  },
-  emoji: {
-    fontSize: 28,
-    marginBottom: SPACING.xs,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  labelSelected: {
-    color: COLORS.primaryLight,
-  },
-  topics: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginTop: SPACING.xs,
-  },
+  emoji: { fontSize: 28, marginBottom: SPACING.xs },
+  label: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+  topics: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: SPACING.xs },
   chip: {
-    backgroundColor: COLORS.bg,
+    backgroundColor: COLORS.inputBg,
+    borderWidth: 1,
+    borderColor: COLORS.glassBorder,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
     borderRadius: RADIUS.full,
   },
-  chipSelected: {
-    backgroundColor: COLORS.primary + '33',
-  },
-  chipText: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-  },
-  chipTextSelected: {
-    color: COLORS.primaryLight,
-  },
+  chipText: { fontSize: 11, color: COLORS.textMuted },
 });
