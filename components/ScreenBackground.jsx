@@ -65,7 +65,7 @@ export default function ScreenBackground({ children, style, variant = 'default' 
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, ...(Platform.OS === 'web' ? { height: '100%' } : {}) },
+  root: { flex: 1, minHeight: 0, ...(Platform.OS === 'web' ? { height: '100%' } : {}) },
   orb:  { position: 'absolute', overflow: 'hidden' },
   fill: { flex: 1, borderRadius: 9999 },
 });
