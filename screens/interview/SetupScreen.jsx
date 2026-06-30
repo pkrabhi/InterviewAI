@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, TextInput, FlatList, Alert, ActivityIndicator,
+  ScrollView, TextInput, Alert, ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -88,18 +88,32 @@ export default function SetupScreen({ navigation, route }) {
 
   // ── Step 1: Role ───────────────────────────────────────────────────
   const renderStep1 = () => (
-    <View style={styles.stepContent}>
+    <ScrollView
+      style={styles.stepContent}
+      contentContainerStyle={{ paddingBottom: SPACING.xxl }}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.stepTitle}>What role are you interviewing for?</Text>
-      <FlatList
-        data={ROLES}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        scrollEnabled={false}
-        renderItem={({ item }) => (
-          <RoleCard role={item} selected={selectedRole?.id === item.id} onPress={() => setSelectedRole(item)} />
-        )}
-        style={styles.roleGrid}
-      />
+      <View style={styles.roleGrid}>
+        {ROLES.reduce((rows, item, i) => {
+          if (i % 2 === 0) rows.push([]);
+          rows[rows.length - 1].push(item);
+          return rows;
+        }, []).map((row, ri) => (
+          <View key={ri} style={{ flexDirection: 'row' }}>
+            {row.map((item) => (
+              <RoleCard
+                key={item.id}
+                role={item}
+                selected={selectedRole?.id === item.id}
+                onPress={() => setSelectedRole(item)}
+              />
+            ))}
+            {row.length === 1 && <View style={{ flex: 1, margin: SPACING.xs }} />}
+          </View>
+        ))}
+      </View>
       <TouchableOpacity
         style={[styles.nextBtn, !selectedRole && styles.nextBtnDisabled]}
         onPress={() => selectedRole && setStep(2)}
@@ -114,7 +128,7 @@ export default function SetupScreen({ navigation, route }) {
           <MaterialCommunityIcons name="arrow-right" size={18} color="#fff" />
         </LinearGradient>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 
   // ── Step 2: Level + Type ───────────────────────────────────────────
@@ -318,7 +332,7 @@ const makeStyles = (COLORS) => StyleSheet.create({
   stepTitle: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.md },
   stepSub: { fontSize: FONT_SIZE.sm, color: COLORS.textMuted, marginBottom: SPACING.md, lineHeight: 20 },
 
-  roleGrid: { marginBottom: SPACING.lg },
+  roleGrid: { marginBottom: SPACING.lg, flexDirection: 'column' },
 
   levelRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.sm },
   levelCard: { padding: SPACING.md, alignItems: 'center' },
