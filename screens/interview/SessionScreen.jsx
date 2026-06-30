@@ -77,6 +77,8 @@ export default function SessionScreen({ route, navigation }) {
   const isMounted      = useRef(true);
   const pulseAnim      = useRef(new Animated.Value(1)).current;
   const hasSpokenFirst = useRef(false); // skip TTS on opening message
+  const voiceModalRef  = useRef(false); // track modal open state without closure staleness
+  const isListeningRef = useRef(false); // track listening without stale closure
 
   // expo-speech-recognition events
   useSpeechRecognitionEvent('result', (event) => {
@@ -84,10 +86,22 @@ export default function SessionScreen({ route, navigation }) {
     setVoiceTranscript(text);
   });
   useSpeechRecognitionEvent('end', () => {
-    setIsListening(false);
+    // Android ASR stops after brief silence — restart if modal is still open
+    if (voiceModalRef.current && Platform.OS !== 'web' && isListeningRef.current) {
+      try {
+        ExpoSpeechRecognitionModule.start({ lang: 'en-IN', interimResults: true, continuous: true });
+      } catch (_) {
+        setIsListening(false);
+        isListeningRef.current = false;
+      }
+    } else {
+      setIsListening(false);
+      isListeningRef.current = false;
+    }
   });
   useSpeechRecognitionEvent('error', () => {
     setIsListening(false);
+    isListeningRef.current = false;
   });
 
   const {
@@ -132,8 +146,10 @@ export default function SessionScreen({ route, navigation }) {
     }
   }, [messages, isTyping]);
 
-  // Keep ref in sync so TTS effect never reads a stale closure value
+  // Keep refs in sync
   useEffect(() => { voiceEnabledRef.current = voiceEnabled; }, [voiceEnabled]);
+  useEffect(() => { voiceModalRef.current = voiceModalVisible; }, [voiceModalVisible]);
+  useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
 
   // Speak Aryan's messages — skip the opening message, speak from 2nd onward
   useEffect(() => {
@@ -254,13 +270,15 @@ export default function SessionScreen({ route, navigation }) {
     }
     ExpoSpeechRecognitionModule.start({ lang: 'en-IN', interimResults: true, continuous: true });
     setIsListening(true);
+    isListeningRef.current = true;
   };
 
   const stopVoiceRecording = () => {
+    isListeningRef.current = false; // stop auto-restart before calling stop
     if (Platform.OS === 'web') {
       if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
     } else {
-      ExpoSpeechRecognitionModule.stop();
+      try { ExpoSpeechRecognitionModule.stop(); } catch (_) {}
     }
     setIsListening(false);
   };
@@ -489,7 +507,7 @@ export default function SessionScreen({ route, navigation }) {
               />
 
               <TouchableOpacity
-                onPress={handleSend}
+                onPress={() => handleSend()}
                 disabled={!inputText.trim() || isTyping}
                 style={{ borderRadius: RADIUS.full, overflow: 'hidden', opacity: (!inputText.trim() || isTyping) ? 0.4 : 1 }}
               >
