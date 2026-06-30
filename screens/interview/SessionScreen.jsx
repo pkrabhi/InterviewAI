@@ -176,7 +176,20 @@ export default function SessionScreen({ route, navigation }) {
         addMessage({ role: 'interviewer', content: response.openingMessage });
       }
     } catch (error) {
-      Alert.alert('Connection Error', 'Could not connect to the interview server. Make sure the backend is running.');
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        Alert.alert(
+          'Session Expired',
+          'Your login session has expired. Please log in again.',
+          [{ text: 'OK', onPress: () => navigation.replace('Login') }]
+        );
+      } else if (status === 500) {
+        Alert.alert('Server Error', 'The AI server had an issue. Please try again in a moment.');
+      } else if (!error?.response) {
+        Alert.alert('No Connection', 'Could not reach the server. Check your internet connection.');
+      } else {
+        Alert.alert('Error', error?.response?.data?.message || 'Could not start the interview. Please try again.');
+      }
     } finally {
       setTyping(false);
     }
