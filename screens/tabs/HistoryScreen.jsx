@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, StyleSheet, FlatList,
   TouchableOpacity, ActivityIndicator,
@@ -58,9 +59,11 @@ export default function HistoryScreen({ navigation }) {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading]   = useState(true);
 
-  useEffect(() => {
-    fetchSessions();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchSessions();
+    }, [])
+  );
 
   const fetchSessions = async () => {
     try {

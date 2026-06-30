@@ -15,6 +15,14 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef(null);
 
+  // Auto-stop at 2 minutes — separate from setElapsed to avoid React violation
+  useEffect(() => {
+    if (visible && elapsed >= MAX_SECONDS) {
+      clearInterval(timerRef.current);
+      onStop();
+    }
+  }, [elapsed, visible]);
+
   useEffect(() => {
     if (!visible) {
       pulse1.stopAnimation(); pulse1.setValue(1);
@@ -40,14 +48,7 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
 
     setElapsed(0);
     timerRef.current = setInterval(() => {
-      setElapsed((s) => {
-        if (s + 1 >= MAX_SECONDS) {
-          clearInterval(timerRef.current);
-          onStop(); // auto-stop at 2 min
-          return s + 1;
-        }
-        return s + 1;
-      });
+      setElapsed((s) => s + 1);
     }, 1000);
 
     return () => clearInterval(timerRef.current);

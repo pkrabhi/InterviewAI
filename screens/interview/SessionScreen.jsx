@@ -64,6 +64,7 @@ export default function SessionScreen({ route, navigation }) {
   const [voiceTranscript, setVoiceTranscript]     = useState('');
   const flatListRef    = useRef(null);
   const recognitionRef = useRef(null);
+  const isMounted      = useRef(true);
   const pulseAnim      = useRef(new Animated.Value(1)).current;
   const hasSpokenFirst = useRef(false); // skip TTS on opening message
 
@@ -99,12 +100,14 @@ export default function SessionScreen({ route, navigation }) {
   }, [isListening]);
 
   useEffect(() => {
+    isMounted.current = true;
     stopSpeaking();
     hasSpokenFirst.current = false;
     resetSession();
     initSession();
     const interval = setInterval(() => setTimer((t) => t + 1), 1000);
     return () => {
+      isMounted.current = false;
       clearInterval(interval);
       stopVoiceRecording();
       stopSpeaking();
@@ -113,7 +116,9 @@ export default function SessionScreen({ route, navigation }) {
 
   useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      setTimeout(() => {
+        if (isMounted.current) flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
   }, [messages, isTyping]);
 
@@ -170,7 +175,7 @@ export default function SessionScreen({ route, navigation }) {
 
   const handleSend = async () => {
     const text = inputText.trim();
-    if (!text || isTyping || isComplete) return;
+    if (!text || isTyping || isComplete || !sessionId) return;
     stopSpeaking();
     setInputText('');
     addMessage({ role: 'candidate', content: text });
@@ -257,6 +262,7 @@ export default function SessionScreen({ route, navigation }) {
   };
 
   const doEndInterview = async () => {
+    if (!sessionId) return;
     stopSpeaking();
     stopVoiceRecording();
     try { await endSession(sessionId); } catch (_) {}

@@ -45,18 +45,16 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" backgroundColor={COLORS.bg} />
-      {isLoggedIn ? (
-        <NavigationContainer>
+      <NavigationContainer>
+        {isLoggedIn ? (
           <AppNavigator />
-        </NavigationContainer>
-      ) : (
-        <NavigationContainer>
+        ) : (
           <AuthStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: COLORS.bg } }}>
             <AuthStack.Screen name="Login" component={LoginScreen} />
             <AuthStack.Screen name="Register" component={RegisterScreen} />
           </AuthStack.Navigator>
-        </NavigationContainer>
-      )}
+        )}
+      </NavigationContainer>
     </SafeAreaProvider>
   );
 }
