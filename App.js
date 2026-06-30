@@ -11,6 +11,7 @@ import RegisterScreen  from './screens/auth/RegisterScreen';
 import { DARK_COLORS as COLORS } from './store/useThemeStore';
 import useAuthStore    from './store/useAuthStore';
 import useThemeStore   from './store/useThemeStore';
+import WebAppShell     from './components/WebAppShell';
 import { getUser, getToken } from './services/authService';
 
 const AuthStack = createStackNavigator();
@@ -41,6 +42,7 @@ export default function App() {
   }
 
   return (
+    <WebAppShell bgColor={COLORS.bg}>
     <SafeAreaProvider>
       <StatusBar style="light" backgroundColor={COLORS.bg} />
       <NavigationContainer>
@@ -54,5 +56,6 @@ export default function App() {
         )}
       </NavigationContainer>
     </SafeAreaProvider>
+    </WebAppShell>
   );
 }

@@ -27,7 +27,14 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single",
+      "name": "Crackd — AI Interview Practice",
+      "shortName": "Crackd",
+      "description": "Practice real interviews with AI. Built for Indian IT job seekers.",
+      "themeColor": "#6366F1",
+      "backgroundColor": "#080B14"
     },
     "extra": {
       "eas": {
