@@ -3,8 +3,11 @@ import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS } from '../../constants/theme';
+import ScreenBackground from '../../components/ScreenBackground';
+import GlassCard from '../../components/GlassCard';
 import ScoreGauge from '../../components/ScoreGauge';
 import { getReport } from '../../services/reportService';
 
@@ -83,114 +86,130 @@ export default function ReportScreen({ route, navigation }) {
 
   if (loading && !report) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Generating your report...</Text>
-        <Text style={styles.loadingSubText}>AI is evaluating your performance</Text>
-        {retriesRef.current > 0 && (
-          <Text style={styles.loadingSubText}>Retry {retriesRef.current}/5...</Text>
-        )}
-      </View>
+      <ScreenBackground>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Generating your report...</Text>
+          <Text style={styles.loadingSubText}>AI is evaluating your performance</Text>
+          {retriesRef.current > 0 && (
+            <Text style={styles.loadingSubText}>Retry {retriesRef.current}/5...</Text>
+          )}
+        </View>
+      </ScreenBackground>
     );
   }
 
   if (error || !report) {
     return (
-      <View style={styles.loadingContainer}>
-        <MaterialCommunityIcons name="alert-circle-outline" size={48} color={COLORS.danger} />
-        <Text style={styles.loadingText}>Report not ready yet</Text>
-        <Text style={styles.loadingSubText}>The AI may still be processing</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => { retriesRef.current = 0; fetchReport(); }}>
-          <Text style={styles.retryBtnText}>Try Again</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenBackground>
+        <View style={styles.loadingContainer}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={COLORS.danger} />
+          <Text style={styles.loadingText}>Report not ready yet</Text>
+          <Text style={styles.loadingSubText}>The AI may still be processing</Text>
+          <TouchableOpacity style={styles.retryBtnWrapper} onPress={() => { retriesRef.current = 0; fetchReport(); }}>
+            <LinearGradient colors={['#6366F1', '#818CF8']} style={styles.retryBtn}>
+              <Text style={styles.retryBtnText}>Try Again</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </ScreenBackground>
     );
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.scoreSection}>
-        <ScoreGauge score={report.overallScore} size={160} label="Overall Score" />
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Performance Breakdown</Text>
-        <ScoreBar label="Technical"        score={report.technicalScore} />
-        <ScoreBar label="Communication"    score={report.communicationScore} />
-        <ScoreBar label="Problem Solving"  score={report.problemSolvingScore} />
-        <ScoreBar label="Best Practices"   score={report.bestPracticesScore} />
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <MaterialCommunityIcons name="thumb-up" size={18} color={COLORS.success} />
-          <Text style={styles.sectionTitle}>Strengths</Text>
+    <ScreenBackground>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.scoreSection}>
+          <ScoreGauge score={report.overallScore} size={160} label="Overall Score" />
         </View>
-        <View style={styles.tagContainer}>
-          <TagList items={report.strengths} color={COLORS.success} bgColor={COLORS.success + '22'} />
-        </View>
-      </View>
 
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <MaterialCommunityIcons name="trending-up" size={18} color={COLORS.accent} />
-          <Text style={styles.sectionTitle}>Areas to Improve</Text>
-        </View>
-        <View style={styles.tagContainer}>
-          <TagList items={report.improvements} color={COLORS.accent} bgColor={COLORS.accent + '22'} />
-        </View>
-      </View>
+        <GlassCard style={styles.card} intensity={20}>
+          <Text style={styles.sectionTitle}>Performance Breakdown</Text>
+          <ScoreBar label="Technical"        score={report.technicalScore} />
+          <ScoreBar label="Communication"    score={report.communicationScore} />
+          <ScoreBar label="Problem Solving"  score={report.problemSolvingScore} />
+          <ScoreBar label="Best Practices"   score={report.bestPracticesScore} />
+        </GlassCard>
 
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <MaterialCommunityIcons name="book-open-variant" size={18} color={COLORS.primaryLight} />
-          <Text style={styles.sectionTitle}>Study These Next</Text>
+        <GlassCard style={styles.card} intensity={20}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="thumb-up" size={18} color={COLORS.success} />
+            <Text style={styles.sectionTitle}>Strengths</Text>
+          </View>
+          <View style={styles.tagContainer}>
+            <TagList items={report.strengths} color={COLORS.success} bgColor={COLORS.success + '22'} />
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.card} intensity={20}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="trending-up" size={18} color={COLORS.accent} />
+            <Text style={styles.sectionTitle}>Areas to Improve</Text>
+          </View>
+          <View style={styles.tagContainer}>
+            <TagList items={report.improvements} color={COLORS.accent} bgColor={COLORS.accent + '22'} />
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.card} intensity={20}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="book-open-variant" size={18} color={COLORS.primaryLight} />
+            <Text style={styles.sectionTitle}>Study These Next</Text>
+          </View>
+          <View style={styles.tagContainer}>
+            <TagList items={report.nextTopics} color={COLORS.primaryLight} bgColor={COLORS.primary + '22'} />
+          </View>
+        </GlassCard>
+
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.tryAgainBtnWrapper}
+            onPress={() => navigation.navigate('InterviewSetup')}
+          >
+            <LinearGradient colors={['#6366F1', '#818CF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.tryAgainBtn}>
+              <MaterialCommunityIcons name="refresh" size={16} color="#fff" />
+              <Text style={styles.tryAgainText}>Try Again</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.homeBtn} onPress={() => navigation.navigate('MainTabs')}>
+            <Text style={styles.homeBtnText}>Go Home</Text>
+          </TouchableOpacity>
         </View>
-        <View style={styles.tagContainer}>
-          <TagList items={report.nextTopics} color={COLORS.primaryLight} bgColor={COLORS.primary + '22'} />
-        </View>
-      </View>
 
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.tryAgainBtn} onPress={() => navigation.navigate('InterviewSetup')}>
-          <MaterialCommunityIcons name="refresh" size={18} color={COLORS.text} />
-          <Text style={styles.tryAgainText}>Try Again</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.homeBtn} onPress={() => navigation.navigate('MainTabs')}>
-          <Text style={styles.homeBtnText}>Go Home</Text>
-        </TouchableOpacity>
-      </View>
+        <GlassCard
+          style={styles.proNudge}
+          tint="rgba(99,102,241,0.12)"
+          borderColor="rgba(99,102,241,0.3)"
+          intensity={18}
+        >
+          <Text style={styles.proNudgeTitle}>Get PDF Report</Text>
+          <Text style={styles.proNudgeSubtitle}>Download & share your performance report</Text>
+          <TouchableOpacity style={styles.proBtnWrapper}>
+            <LinearGradient colors={['#6366F1', '#818CF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.proBtn}>
+              <Text style={styles.proBtnText}>Upgrade to Pro — ₹299/month</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </GlassCard>
 
-      <View style={styles.proNudge}>
-        <Text style={styles.proNudgeTitle}>Get PDF Report</Text>
-        <Text style={styles.proNudgeSubtitle}>Download & share your performance report</Text>
-        <TouchableOpacity style={styles.proBtn}>
-          <Text style={styles.proBtnText}>Upgrade to Pro — ₹299/month</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={{ height: SPACING.xxl }} />
-    </ScrollView>
+        <View style={{ height: SPACING.xxl }} />
+      </ScrollView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
   loadingContainer: {
-    flex: 1, backgroundColor: COLORS.bg,
+    flex: 1,
     alignItems: 'center', justifyContent: 'center', gap: SPACING.md,
   },
   loadingText: { color: COLORS.text, fontSize: 18, fontWeight: '600' },
   loadingSubText: { color: COLORS.textMuted, fontSize: 14 },
-  retryBtn: {
-    backgroundColor: COLORS.primary, paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md, borderRadius: RADIUS.md, marginTop: SPACING.md,
-  },
-  retryBtnText: { color: COLORS.text, fontWeight: '600' },
+  retryBtnWrapper: { marginTop: SPACING.md, borderRadius: RADIUS.md, overflow: 'hidden' },
+  retryBtn: { paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md, borderRadius: RADIUS.md },
+  retryBtnText: { color: '#fff', fontWeight: '600' },
   scoreSection: { alignItems: 'center', paddingVertical: SPACING.xl },
   card: {
-    backgroundColor: COLORS.card, borderRadius: RADIUS.lg, borderWidth: 1,
-    borderColor: COLORS.border, padding: SPACING.lg,
+    padding: SPACING.lg,
     marginHorizontal: SPACING.md, marginBottom: SPACING.md,
   },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.md },
@@ -204,28 +223,25 @@ const styles = StyleSheet.create({
   tag: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.full },
   tagText: { fontSize: 13, fontWeight: '500' },
   actions: { flexDirection: 'row', gap: SPACING.sm, marginHorizontal: SPACING.md, marginBottom: SPACING.md },
+  tryAgainBtnWrapper: { flex: 1, borderRadius: RADIUS.md, overflow: 'hidden' },
   tryAgainBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: SPACING.sm, backgroundColor: COLORS.primary, padding: SPACING.md, borderRadius: RADIUS.md,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md,
   },
-  tryAgainText: { color: COLORS.text, fontWeight: '600' },
+  tryAgainText: { color: '#fff', fontWeight: '700' },
   homeBtn: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)',
     padding: SPACING.md, borderRadius: RADIUS.md,
   },
-  homeBtnText: { color: COLORS.textMuted, fontWeight: '600' },
+  homeBtnText: { color: 'rgba(255,255,255,0.45)', fontWeight: '600' },
   proNudge: {
-    backgroundColor: COLORS.cardLight, borderRadius: RADIUS.lg,
-    borderWidth: 1, borderColor: COLORS.primary + '55',
     padding: SPACING.lg, marginHorizontal: SPACING.md, marginBottom: SPACING.md,
     alignItems: 'center', gap: SPACING.sm,
   },
   proNudgeTitle: { color: COLORS.text, fontSize: 16, fontWeight: '700' },
-  proNudgeSubtitle: { color: COLORS.textMuted, fontSize: 13 },
-  proBtn: {
-    backgroundColor: COLORS.primary, paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md, borderRadius: RADIUS.full, marginTop: SPACING.sm,
-  },
-  proBtnText: { color: COLORS.text, fontWeight: '600', fontSize: 13 },
+  proNudgeSubtitle: { color: 'rgba(255,255,255,0.4)', fontSize: 13 },
+  proBtnWrapper: { borderRadius: RADIUS.full, overflow: 'hidden', marginTop: SPACING.sm },
+  proBtn: { paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md, borderRadius: RADIUS.full },
+  proBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 });

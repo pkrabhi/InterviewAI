@@ -3,6 +3,8 @@ import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   FlatList, KeyboardAvoidingView, Platform, Alert, Animated,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import {
@@ -298,32 +300,42 @@ export default function SessionScreen({ route, navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={[styles.avatar, isSpeaking && styles.avatarSpeaking]}>
-            <Text style={styles.avatarText}>A</Text>
+      {/* Glass Header */}
+      <View style={styles.headerWrapper}>
+        {Platform.OS !== 'web' && (
+          <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
+        )}
+        <View style={[StyleSheet.absoluteFill, styles.headerTint]} />
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <LinearGradient
+              colors={isSpeaking ? ['#10B981', '#059669'] : ['#6366F1', '#7C3AED']}
+              style={[styles.avatar, isSpeaking && styles.avatarSpeaking]}
+            >
+              <Text style={styles.avatarText}>A</Text>
+            </LinearGradient>
+            <View>
+              <Text style={styles.interviewerName}>
+                Aryan {isSpeaking ? '🔊' : ''}
+              </Text>
+              <Text style={styles.roleLabel}>{role?.label || 'Java Backend'} • {level || 'Mid'}</Text>
+            </View>
           </View>
-          <View>
-            <Text style={styles.interviewerName}>
-              Aryan {isSpeaking ? '🔊' : ''}
-            </Text>
-            <Text style={styles.roleLabel}>{role?.label || 'Java Backend'} • {level || 'Mid'}</Text>
+          <View style={styles.headerRight}>
+            <TouchableOpacity onPress={toggleVoice} style={styles.headerIconBtn}>
+              <MaterialCommunityIcons
+                name={voiceEnabled ? 'volume-high' : 'volume-off'}
+                size={18}
+                color={voiceEnabled ? COLORS.primaryLight : 'rgba(255,255,255,0.3)'}
+              />
+            </TouchableOpacity>
+            <View style={styles.timerPill}>
+              <Text style={styles.timer}>{formatTime(timer)}</Text>
+            </View>
+            <TouchableOpacity onPress={handleEndInterview} style={styles.endBtn}>
+              <Text style={styles.endBtnText}>End</Text>
+            </TouchableOpacity>
           </View>
-        </View>
-        <View style={styles.headerRight}>
-          {/* Voice toggle */}
-          <TouchableOpacity onPress={toggleVoice} style={styles.voiceToggle}>
-            <MaterialCommunityIcons
-              name={voiceEnabled ? 'volume-high' : 'volume-off'}
-              size={20}
-              color={voiceEnabled ? COLORS.primary : COLORS.textMuted}
-            />
-          </TouchableOpacity>
-          <Text style={styles.timer}>{formatTime(timer)}</Text>
-          <TouchableOpacity onPress={handleEndInterview} style={styles.endBtn}>
-            <Text style={styles.endBtnText}>End</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -369,52 +381,61 @@ export default function SessionScreen({ route, navigation }) {
         onCancel={handleVoiceCancel}
       />
 
-      {/* Input area */}
+      {/* Glass input area */}
       {!isComplete && (
-        <View style={styles.inputArea}>
-          <HintPanel hint="Think about a real example from your work experience." />
-
-          {/* Listening indicator */}
-          {isListening && (
-            <View style={styles.listeningBar}>
-              <MaterialCommunityIcons name="microphone" size={14} color={COLORS.danger} />
-              <Text style={styles.listeningText}>Listening... tap mic to stop</Text>
-            </View>
+        <View style={styles.inputAreaWrapper}>
+          {Platform.OS !== 'web' && (
+            <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
           )}
+          <View style={[StyleSheet.absoluteFill, styles.inputAreaTint]} />
+          <View style={styles.inputArea}>
+            <HintPanel hint="Think about a real example from your work experience." />
 
-          <View style={styles.inputRow}>
-            {/* Mic button */}
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            {isListening && (
+              <View style={styles.listeningBar}>
+                <MaterialCommunityIcons name="microphone" size={14} color={COLORS.danger} />
+                <Text style={styles.listeningText}>Listening... tap mic to stop</Text>
+              </View>
+            )}
+
+            <View style={styles.inputRow}>
+              <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                <TouchableOpacity
+                  style={[styles.micBtn, isListening && styles.micBtnActive]}
+                  onPress={toggleMic}
+                  disabled={isTyping}
+                >
+                  <MaterialCommunityIcons
+                    name={isListening ? 'microphone' : 'microphone-outline'}
+                    size={22}
+                    color={isListening ? '#fff' : 'rgba(255,255,255,0.4)'}
+                  />
+                </TouchableOpacity>
+              </Animated.View>
+
+              <TextInput
+                style={styles.input}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder={isListening ? 'Listening...' : 'Type or speak your answer...'}
+                placeholderTextColor="rgba(255,255,255,0.28)"
+                multiline
+                maxLength={1000}
+              />
+
               <TouchableOpacity
-                style={[styles.micBtn, isListening && styles.micBtnActive]}
-                onPress={toggleMic}
-                disabled={isTyping}
+                onPress={handleSend}
+                disabled={!inputText.trim() || isTyping}
+                style={[styles.sendBtnWrapper, (!inputText.trim() || isTyping) && { opacity: 0.4 }]}
               >
-                <MaterialCommunityIcons
-                  name={isListening ? 'microphone' : 'microphone-outline'}
-                  size={22}
-                  color={isListening ? COLORS.text : COLORS.textMuted}
-                />
+                <LinearGradient
+                  colors={['#6366F1', '#818CF8']}
+                  style={styles.sendBtn}
+                >
+                  <MaterialCommunityIcons name="send" size={18} color="#fff" />
+                </LinearGradient>
               </TouchableOpacity>
-            </Animated.View>
-
-            <TextInput
-              style={styles.input}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder={isListening ? 'Listening...' : 'Type or speak your answer...'}
-              placeholderTextColor={COLORS.textMuted}
-              multiline
-              maxLength={1000}
-            />
-
-            <TouchableOpacity
-              style={[styles.sendBtn, (!inputText.trim() || isTyping) && styles.sendBtnDisabled]}
-              onPress={handleSend}
-              disabled={!inputText.trim() || isTyping}
-            >
-              <MaterialCommunityIcons name="send" size={20} color={COLORS.text} />
-            </TouchableOpacity>
+            </View>
           </View>
         </View>
       )}
@@ -425,7 +446,7 @@ export default function SessionScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: '#0A0E1A',
     ...(Platform.OS === 'web' ? {
       height: '100vh',
       maxHeight: '100vh',
@@ -434,14 +455,19 @@ const styles = StyleSheet.create({
       overflow: 'hidden',
     } : {}),
   },
+  headerWrapper: {
+    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.07)',
+  },
+  headerTint: {
+    backgroundColor: 'rgba(10, 14, 26, 0.55)',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: SPACING.md,
-    backgroundColor: COLORS.card,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -449,69 +475,46 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   avatar: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarSpeaking: {
-    backgroundColor: COLORS.success,
     shadowColor: COLORS.success,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  avatarText: {
-    color: COLORS.text,
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  interviewerName: {
-    color: COLORS.text,
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  roleLabel: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  voiceToggle: {
-    padding: 6,
-  },
-  timer: {
-    color: COLORS.textMuted,
-    fontSize: 14,
-    fontFamily: 'monospace',
-  },
-  endBtn: {
-    borderWidth: 1,
-    borderColor: COLORS.danger,
-    borderRadius: RADIUS.sm,
+  avatarText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  interviewerName: { color: COLORS.text, fontWeight: '600', fontSize: 15 },
+  roleLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 12 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  headerIconBtn: { padding: 6 },
+  timerPill: {
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: RADIUS.full,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
-  endBtnText: {
-    color: COLORS.danger,
-    fontSize: 13,
-    fontWeight: '600',
+  timer: { color: 'rgba(255,255,255,0.55)', fontSize: 13, fontFamily: 'monospace' },
+  endBtn: {
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.5)',
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 5,
+    backgroundColor: 'rgba(239,68,68,0.08)',
   },
-  progressBg: {
-    height: 3,
-    backgroundColor: COLORS.border,
-  },
-  progressFill: {
-    height: 3,
-    backgroundColor: COLORS.primary,
-  },
+  endBtnText: { color: COLORS.danger, fontSize: 13, fontWeight: '700' },
+  progressBg: { height: 2, backgroundColor: 'rgba(255,255,255,0.06)' },
+  progressFill: { height: 2, backgroundColor: COLORS.primary },
   progressLabel: {
-    color: COLORS.textMuted,
+    color: 'rgba(255,255,255,0.3)',
     fontSize: 11,
     textAlign: 'center',
     paddingVertical: SPACING.xs,
@@ -520,31 +523,31 @@ const styles = StyleSheet.create({
     flex: 1,
     ...(Platform.OS === 'web' ? { overflowY: 'auto', minHeight: 0 } : { overflow: 'hidden' }),
   },
-  chatContent: {
-    paddingVertical: SPACING.md,
-    paddingBottom: SPACING.xl,
-  },
+  chatContent: { paddingVertical: SPACING.md, paddingBottom: SPACING.xl },
   completeBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
-    backgroundColor: COLORS.success,
+    backgroundColor: 'rgba(16,185,129,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(16,185,129,0.4)',
     padding: SPACING.md,
     margin: SPACING.md,
     borderRadius: RADIUS.md,
   },
-  completeText: {
-    color: COLORS.text,
-    fontWeight: '600',
-    fontSize: 14,
+  completeText: { color: COLORS.success, fontWeight: '600', fontSize: 14 },
+  inputAreaWrapper: {
+    overflow: 'hidden',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.07)',
+    flexShrink: 0,
+  },
+  inputAreaTint: {
+    backgroundColor: 'rgba(10, 14, 26, 0.60)',
   },
   inputArea: {
-    backgroundColor: COLORS.card,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
     paddingTop: SPACING.sm,
-    flexShrink: 0,
   },
   listeningBar: {
     flexDirection: 'row',
@@ -553,11 +556,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.xs,
   },
-  listeningText: {
-    color: COLORS.danger,
-    fontSize: 12,
-    fontWeight: '500',
-  },
+  listeningText: { color: COLORS.danger, fontSize: 12, fontWeight: '500' },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -569,37 +568,37 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.cardLight,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
   micBtnActive: {
-    backgroundColor: COLORS.danger,
-    borderColor: COLORS.danger,
+    backgroundColor: 'rgba(239,68,68,0.85)',
+    borderColor: 'transparent',
   },
   input: {
     flex: 1,
-    backgroundColor: COLORS.cardLight,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: 'rgba(255,255,255,0.10)',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     color: COLORS.text,
     fontSize: 15,
     maxHeight: 120,
   },
+  sendBtnWrapper: {
+    borderRadius: RADIUS.full,
+    overflow: 'hidden',
+  },
   sendBtn: {
     width: 44,
     height: 44,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sendBtnDisabled: {
-    backgroundColor: COLORS.border,
   },
 });

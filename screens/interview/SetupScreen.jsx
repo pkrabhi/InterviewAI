@@ -3,11 +3,14 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, TextInput, FlatList, Alert, ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { COLORS, SPACING, RADIUS } from '../../constants/theme';
 import { ROLES, LEVELS, INTERVIEW_TYPES } from '../../constants/roles';
 import RoleCard from '../../components/RoleCard';
+import GlassCard from '../../components/GlassCard';
+import ScreenBackground from '../../components/ScreenBackground';
 import api from '../../services/api';
 
 function StepBar({ current, total }) {
@@ -273,18 +276,18 @@ export default function SetupScreen({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
+    <ScreenBackground style={styles.container}>
       <StepBar current={step} total={TOTAL_STEPS} />
       {step === 1 && renderStep1()}
       {step === 2 && renderStep2()}
       {step === 3 && renderStep3()}
       {step === 4 && renderStep4()}
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+  container: { flex: 1 },
   stepBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -295,13 +298,13 @@ const styles = StyleSheet.create({
   stepItem: { flexDirection: 'row', alignItems: 'center' },
   stepDot: {
     width: 32, height: 32, borderRadius: RADIUS.full,
-    backgroundColor: COLORS.card, borderWidth: 2, borderColor: COLORS.border,
+    backgroundColor: 'rgba(255,255,255,0.07)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center', justifyContent: 'center',
   },
   stepDotActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  stepNum: { color: COLORS.textMuted, fontWeight: 'bold', fontSize: 13 },
+  stepNum: { color: 'rgba(255,255,255,0.35)', fontWeight: 'bold', fontSize: 13 },
   stepNumActive: { color: COLORS.text },
-  stepLine: { width: 36, height: 2, backgroundColor: COLORS.border, marginHorizontal: SPACING.xs },
+  stepLine: { width: 36, height: 1.5, backgroundColor: 'rgba(255,255,255,0.10)', marginHorizontal: SPACING.xs },
   stepLineActive: { backgroundColor: COLORS.primary },
   stepContent: { flex: 1, paddingHorizontal: SPACING.lg },
   stepTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.md },
@@ -310,37 +313,37 @@ const styles = StyleSheet.create({
   levelRow: { flexDirection: 'row', gap: SPACING.sm },
   levelBtn: {
     flex: 1, paddingVertical: SPACING.md, borderRadius: RADIUS.md,
-    backgroundColor: COLORS.card, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.10)', alignItems: 'center',
   },
-  levelBtnActive: { backgroundColor: COLORS.cardLight, borderColor: COLORS.primary },
-  levelText: { color: COLORS.textMuted, fontWeight: '600', fontSize: 14 },
+  levelBtnActive: { backgroundColor: 'rgba(99,102,241,0.2)', borderColor: COLORS.primary },
+  levelText: { color: 'rgba(255,255,255,0.4)', fontWeight: '600', fontSize: 14 },
   levelTextActive: { color: COLORS.primaryLight },
   typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   typeCard: {
-    width: '47%', backgroundColor: COLORS.card, borderRadius: RADIUS.md,
-    borderWidth: 1.5, borderColor: COLORS.border, padding: SPACING.md,
+    width: '47%', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: RADIUS.md,
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.10)', padding: SPACING.md,
     alignItems: 'center', gap: SPACING.xs,
   },
-  typeCardActive: { borderColor: COLORS.primary, backgroundColor: COLORS.cardLight },
+  typeCardActive: { borderColor: COLORS.primary, backgroundColor: 'rgba(99,102,241,0.18)' },
   typeEmoji: { fontSize: 24 },
   typeLabel: { color: COLORS.textMuted, fontSize: 13, fontWeight: '600' },
   typeLabelActive: { color: COLORS.primaryLight },
 
   // Resume upload
   uploadBox: {
-    borderWidth: 2, borderColor: COLORS.border, borderStyle: 'dashed',
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', borderStyle: 'dashed',
     borderRadius: RADIUS.lg, padding: SPACING.xl,
     alignItems: 'center', gap: SPACING.md,
-    backgroundColor: COLORS.card, marginBottom: SPACING.md,
+    backgroundColor: 'rgba(255,255,255,0.05)', marginBottom: SPACING.md,
   },
-  uploadBoxDone: { borderColor: COLORS.success, borderStyle: 'solid' },
+  uploadBoxDone: { borderColor: COLORS.success, borderStyle: 'solid', backgroundColor: 'rgba(16,185,129,0.08)' },
   uploadTitle: { color: COLORS.text, fontSize: 16, fontWeight: '600' },
   uploadHint: { color: COLORS.textMuted, fontSize: 12 },
   uploadingText: { color: COLORS.primary, fontSize: 14, fontWeight: '500' },
   uploadedName: { color: COLORS.text, fontSize: 14, fontWeight: '600', maxWidth: '80%' },
   summaryBox: {
-    backgroundColor: COLORS.card, borderRadius: RADIUS.md,
-    borderWidth: 1, borderColor: COLORS.primary + '44',
+    backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: RADIUS.md,
+    borderWidth: 1, borderColor: 'rgba(99,102,241,0.3)',
     padding: SPACING.md, gap: SPACING.sm, marginBottom: SPACING.md,
   },
   summaryHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
@@ -349,7 +352,7 @@ const styles = StyleSheet.create({
 
   // JD
   jdInput: {
-    backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)',
     borderRadius: RADIUS.md, padding: SPACING.md,
     color: COLORS.text, fontSize: 14, minHeight: 180, marginBottom: SPACING.lg,
   },
@@ -363,8 +366,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
     backgroundColor: COLORS.primary, paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md, borderRadius: RADIUS.md,
+    shadowColor: '#6366F1', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
   },
-  nextBtnDisabled: { backgroundColor: COLORS.border },
+  nextBtnDisabled: { backgroundColor: 'rgba(255,255,255,0.12)', shadowOpacity: 0 },
   nextBtnText: { color: COLORS.text, fontSize: 14, fontWeight: '600' },
   startBtns: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' },
   skipBtn: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.md },

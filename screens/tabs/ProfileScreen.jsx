@@ -1,40 +1,42 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert, ActivityIndicator, Linking, Platform,
+  ScrollView, Alert, ActivityIndicator, Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS } from '../../constants/theme';
+import ScreenBackground from '../../components/ScreenBackground';
+import GlassCard from '../../components/GlassCard';
 import useAuthStore from '../../store/useAuthStore';
 import { logout }   from '../../services/authService';
 import { createPaymentOrder } from '../../services/paymentService';
 
 const showAlert = (title, message) => {
-  if (Platform.OS === 'web') {
-    window.alert(`${title}\n\n${message}`);
-  } else {
-    Alert.alert(title, message);
-  }
+  if (Platform.OS === 'web') window.alert(`${title}\n\n${message}`);
+  else Alert.alert(title, message);
 };
 
 const MenuItem = ({ icon, label, onPress, danger, subtitle }) => (
   <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
-    <MaterialCommunityIcons
-      name={icon}
-      size={20}
-      color={danger ? COLORS.danger : COLORS.textMuted}
-    />
+    <View style={[styles.menuIconWrap, danger && styles.menuIconDanger]}>
+      <MaterialCommunityIcons
+        name={icon}
+        size={18}
+        color={danger ? COLORS.danger : 'rgba(255,255,255,0.55)'}
+      />
+    </View>
     <View style={{ flex: 1 }}>
       <Text style={[styles.menuLabel, danger && { color: COLORS.danger }]}>{label}</Text>
       {subtitle ? <Text style={styles.menuSubtitle}>{subtitle}</Text> : null}
     </View>
-    <MaterialCommunityIcons name="chevron-right" size={18} color={COLORS.border} />
+    <MaterialCommunityIcons name="chevron-right" size={16} color="rgba(255,255,255,0.2)" />
   </TouchableOpacity>
 );
 
 export default function ProfileScreen() {
-  const { user, logout: clearAuth, setUser } = useAuthStore();
-  const [upgrading, setUpgrading] = useState(false);
+  const { user, logout: clearAuth } = useAuthStore();
+  const [upgrading, setUpgrading]   = useState(false);
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
@@ -53,10 +55,7 @@ export default function ProfileScreen() {
     setUpgrading(true);
     try {
       const order = await createPaymentOrder();
-      showAlert(
-        'Pro Upgrade',
-        `Order created!\nOrder ID: ${order.orderId}\nAmount: ₹${order.amount / 100}\n\nRazorpay checkout is available in the Android build.`
-      );
+      showAlert('Pro Upgrade', `Order created!\nOrder ID: ${order.orderId}\nAmount: ₹${order.amount / 100}`);
     } catch (e) {
       showAlert('Error', 'Could not create payment order. Please try again.');
     } finally {
@@ -64,258 +63,208 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleNotifications = () => {
-    showAlert('Notifications', 'Push notifications will be available in the Android app. Stay tuned!');
-  };
-
-  const handlePrivacy = () => {
-    showAlert(
-      'Privacy Policy',
-      'InterviewAI does not share your interview data with third parties.\n\n' +
-      '• Your answers are used only to generate your performance report.\n' +
-      '• We use Groq AI for question generation.\n' +
-      '• Data is stored securely on Supabase (PostgreSQL).\n' +
-      '• You can delete your account and all data anytime.'
-    );
-  };
-
-  const handleAbout = () => {
-    showAlert(
-      'About InterviewAI',
-      'InterviewAI v1.0.0\n\n' +
-      'Practice real-world technical interviews with AI Interviewer Aryan.\n\n' +
-      'Built for Indian IT job seekers.\n\n' +
-      'Tech Stack: React Native • Spring Boot • Groq AI • Supabase\n\n' +
-      '© 2026 InterviewAI. All rights reserved.'
-    );
-  };
-
-  const handleHelp = () => {
-    showAlert(
-      'Help & FAQ',
-      'Q: How many free interviews do I get?\nA: 2 interviews on the free plan.\n\n' +
-      'Q: How is my score calculated?\nA: AI evaluates technical knowledge, communication, problem solving and best practices.\n\n' +
-      'Q: Is my interview data private?\nA: Yes, only you can see your reports.\n\n' +
-      'Q: Can I use voice input?\nA: Yes! Tap the mic button in the interview screen (Chrome only).'
-    );
-  };
-
-  const handleRate = () => {
-    showAlert('Rate the App', 'Thank you! Rating will be available when the app is live on Play Store.');
-  };
-
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : 'AB';
 
-  const planColor = user?.plan === 'PRO' ? COLORS.accent : COLORS.textMuted;
-  const planBg    = user?.plan === 'PRO' ? COLORS.accent + '22' : COLORS.card;
-
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Avatar + name */}
-      <View style={styles.profileSection}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-        <Text style={styles.name}>{user?.name || 'Abhijeet'}</Text>
-        <Text style={styles.email}>{user?.email || 'abhipkr11@gmail.com'}</Text>
-        <View style={[styles.planBadge, { backgroundColor: planBg }]}>
-          <Text style={[styles.planText, { color: planColor }]}>
-            {user?.plan === 'PRO' ? '⭐ PRO Plan' : 'FREE Plan'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Upgrade card */}
-      {user?.plan !== 'PRO' && (
-        <View style={styles.upgradeCard}>
-          <View style={styles.upgradeLeft}>
-            <Text style={styles.upgradeTitle}>Upgrade to Pro</Text>
-            <Text style={styles.upgradeSubtitle}>
-              Unlimited interviews, PDF reports & history
+    <ScreenBackground>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Avatar hero section */}
+        <View style={styles.heroSection}>
+          <LinearGradient
+            colors={['#6366F1', '#7C3AED']}
+            style={styles.avatar}
+          >
+            <Text style={styles.avatarText}>{initials}</Text>
+          </LinearGradient>
+          <Text style={styles.name}>{user?.name || 'Abhijeet'}</Text>
+          <Text style={styles.email}>{user?.email || 'abhipkr11@gmail.com'}</Text>
+          <View style={[styles.planBadge, user?.plan === 'PRO' && styles.planBadgePro]}>
+            <Text style={[styles.planText, user?.plan === 'PRO' && styles.planTextPro]}>
+              {user?.plan === 'PRO' ? '⭐ PRO Plan' : 'FREE Plan'}
             </Text>
           </View>
-          <TouchableOpacity style={styles.upgradeBtn} onPress={handleUpgrade} disabled={upgrading}>
-            {upgrading
-              ? <ActivityIndicator size="small" color={COLORS.text} />
-              : <Text style={styles.upgradeBtnText}>₹299/mo</Text>
-            }
-          </TouchableOpacity>
         </View>
-      )}
 
-      {/* Account */}
-      <View style={styles.menuSection}>
-        <Text style={styles.menuSectionTitle}>Account</Text>
-        <MenuItem
-          icon="bell-outline"
-          label="Notifications"
-          subtitle="Interview reminders & updates"
-          onPress={handleNotifications}
-        />
-        <MenuItem
-          icon="shield-check-outline"
-          label="Privacy Policy"
-          subtitle="How we handle your data"
-          onPress={handlePrivacy}
-        />
-        <MenuItem
-          icon="information-outline"
-          label="About"
-          subtitle="InterviewAI v1.0.0"
-          onPress={handleAbout}
-        />
-      </View>
+        {/* Upgrade card */}
+        {user?.plan !== 'PRO' && (
+          <GlassCard
+            style={styles.upgradeCard}
+            tint="rgba(99,102,241,0.18)"
+            borderColor="rgba(99,102,241,0.35)"
+            intensity={20}
+          >
+            <View style={styles.upgradeLeft}>
+              <Text style={styles.upgradeTitle}>Upgrade to Pro</Text>
+              <Text style={styles.upgradeSubtitle}>Unlimited interviews, PDF reports & history</Text>
+            </View>
+            <TouchableOpacity onPress={handleUpgrade} disabled={upgrading} style={styles.upgradeBtnWrapper}>
+              <LinearGradient
+                colors={['#6366F1', '#818CF8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.upgradeBtn}
+              >
+                {upgrading
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Text style={styles.upgradeBtnText}>₹299/mo</Text>
+                }
+              </LinearGradient>
+            </TouchableOpacity>
+          </GlassCard>
+        )}
 
-      {/* Support */}
-      <View style={styles.menuSection}>
-        <Text style={styles.menuSectionTitle}>Support</Text>
-        <MenuItem
-          icon="help-circle-outline"
-          label="Help & FAQ"
-          subtitle="Common questions answered"
-          onPress={handleHelp}
-        />
-        <MenuItem
-          icon="star-outline"
-          label="Rate the App"
-          subtitle="Share your feedback"
-          onPress={handleRate}
-        />
-      </View>
+        {/* Account menu */}
+        <Text style={styles.sectionLabel}>Account</Text>
+        <GlassCard style={styles.menuCard} intensity={18}>
+          <MenuItem
+            icon="bell-outline"
+            label="Notifications"
+            subtitle="Interview reminders & updates"
+            onPress={() => showAlert('Notifications', 'Push notifications coming in the next update!')}
+          />
+          <MenuItem
+            icon="shield-check-outline"
+            label="Privacy Policy"
+            subtitle="How we handle your data"
+            onPress={() => showAlert('Privacy', 'InterviewAI does not share your data with third parties.')}
+          />
+          <MenuItem
+            icon="information-outline"
+            label="About"
+            subtitle="Crackd v1.0.0"
+            onPress={() => showAlert('About', 'Crackd v1.0.0 — Built for Indian IT job seekers.\nTech: React Native • Spring Boot • Groq AI • Supabase')}
+          />
+        </GlassCard>
 
-      {/* Logout */}
-      <View style={styles.menuSection}>
-        <MenuItem icon="logout" label="Logout" onPress={handleLogout} danger />
-      </View>
+        {/* Support menu */}
+        <Text style={styles.sectionLabel}>Support</Text>
+        <GlassCard style={styles.menuCard} intensity={18}>
+          <MenuItem
+            icon="help-circle-outline"
+            label="Help & FAQ"
+            subtitle="Common questions answered"
+            onPress={() => showAlert('Help', 'Q: How many free interviews?\nA: 2 on free plan.\n\nQ: Voice input?\nA: Yes, tap the mic in interview screen.')}
+          />
+          <MenuItem
+            icon="star-outline"
+            label="Rate the App"
+            subtitle="Share your feedback"
+            onPress={() => showAlert('Rate', 'Thank you! Rating available when live on Play Store.')}
+          />
+        </GlassCard>
 
-      <Text style={styles.version}>InterviewAI v1.0.0 • Made for Indian IT 🇮🇳</Text>
-    </ScrollView>
+        {/* Logout */}
+        <Text style={styles.sectionLabel}>Session</Text>
+        <GlassCard style={styles.menuCard} intensity={18}>
+          <MenuItem icon="logout" label="Log Out" onPress={handleLogout} danger />
+        </GlassCard>
+
+        <Text style={styles.version}>Crackd v1.0.0 • Made for Indian IT 🇮🇳</Text>
+        <View style={{ height: SPACING.xxl }} />
+      </ScrollView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  profileSection: {
+  scroll: { flex: 1 },
+  heroSection: {
     alignItems: 'center',
     paddingVertical: SPACING.xl,
+    paddingTop: SPACING.xxl,
     gap: SPACING.sm,
   },
   avatar: {
-    width: 80,
-    height: 80,
+    width: 88,
+    height: 88,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.sm,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    elevation: 14,
   },
-  avatarText: {
-    color: COLORS.text,
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  name: {
-    color: COLORS.text,
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  email: {
-    color: COLORS.textMuted,
-    fontSize: 14,
-  },
+  avatarText: { color: '#fff', fontSize: 30, fontWeight: 'bold' },
+  name: { color: COLORS.text, fontSize: 22, fontWeight: 'bold', letterSpacing: -0.3 },
+  email: { color: 'rgba(255,255,255,0.4)', fontSize: 14 },
   planBadge: {
     paddingHorizontal: SPACING.md,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: RADIUS.full,
     marginTop: SPACING.xs,
+    backgroundColor: 'rgba(255,255,255,0.07)',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
-  planText: {
-    fontSize: 13,
-    fontWeight: '600',
+  planBadgePro: {
+    backgroundColor: 'rgba(245,158,11,0.15)',
+    borderColor: 'rgba(245,158,11,0.35)',
   },
+  planText: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.45)' },
+  planTextPro: { color: COLORS.accent },
   upgradeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.card,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.primary + '55',
     padding: SPACING.md,
     marginHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
     gap: SPACING.md,
+    borderRadius: RADIUS.lg,
   },
-  upgradeLeft: {
-    flex: 1,
-    gap: 4,
-  },
-  upgradeTitle: {
-    color: COLORS.text,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  upgradeSubtitle: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-  },
+  upgradeLeft: { flex: 1, gap: 4 },
+  upgradeTitle: { color: COLORS.text, fontWeight: '700', fontSize: 15 },
+  upgradeSubtitle: { color: 'rgba(255,255,255,0.4)', fontSize: 12 },
+  upgradeBtnWrapper: { borderRadius: RADIUS.md, overflow: 'hidden' },
   upgradeBtn: {
-    backgroundColor: COLORS.primary,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.md,
-    minWidth: 80,
     alignItems: 'center',
+    minWidth: 80,
   },
-  upgradeBtnText: {
-    color: COLORS.text,
+  upgradeBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  sectionLabel: {
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: 11,
     fontWeight: '700',
-    fontSize: 13,
-  },
-  menuSection: {
-    marginHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
-    backgroundColor: COLORS.card,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-  },
-  menuSectionTitle: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-    paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.md,
-    paddingBottom: SPACING.xs,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.xs,
+    marginTop: SPACING.md,
+  },
+  menuCard: {
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.xs,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
     padding: SPACING.md,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
-  menuLabel: {
-    color: COLORS.text,
-    fontSize: 15,
+  menuIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.sm,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  menuSubtitle: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    marginTop: 2,
-  },
+  menuIconDanger: { backgroundColor: 'rgba(239,68,68,0.12)' },
+  menuLabel: { color: COLORS.text, fontSize: 15, fontWeight: '500' },
+  menuSubtitle: { color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 1 },
   version: {
-    color: COLORS.border,
+    color: 'rgba(255,255,255,0.15)',
     fontSize: 12,
     textAlign: 'center',
     paddingVertical: SPACING.lg,
