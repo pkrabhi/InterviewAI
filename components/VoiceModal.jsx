@@ -63,16 +63,16 @@ export default function VoiceModal({ visible, transcript, onStop, onSend, onCanc
 
   return (
     <Modal visible={visible} transparent animationType="fade">
-      {/* Blurred overlay */}
+      {/* Blurred overlay — BlurView cannot blur across Modal window boundaries on Android */}
       <View style={styles.overlay}>
-        {Platform.OS !== 'web' && (
+        {Platform.OS === 'ios' && (
           <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
         )}
         <View style={[StyleSheet.absoluteFill, styles.overlayTint]} />
 
         <View style={styles.card}>
-          {/* Glass background */}
-          {Platform.OS !== 'web' && (
+          {/* Glass background — iOS only; Android BlurView inside overflow:hidden is a no-op */}
+          {Platform.OS === 'ios' && (
             <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
           )}
           <View style={[StyleSheet.absoluteFill, styles.cardTint]} />
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.12)',
   },
   cardTint: {
-    backgroundColor: 'rgba(15, 23, 41, 0.60)',
+    backgroundColor: Platform.OS === 'android' ? 'rgba(15, 23, 41, 0.92)' : 'rgba(15, 23, 41, 0.60)',
   },
   content: {
     padding: SPACING.xl,

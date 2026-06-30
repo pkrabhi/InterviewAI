@@ -137,6 +137,13 @@ export default function HomeScreen({ navigation }) {
                 onPress={() => {
                   if (session.status === 'COMPLETED') {
                     navigation.navigate('InterviewReport', { sessionId: session.id });
+                  } else {
+                    navigation.navigate('InterviewSession', {
+                      resumeSessionId: session.id,
+                      role: { id: session.role, label: session.role },
+                      level: session.level,
+                      type: { id: session.interviewType, label: session.interviewType },
+                    });
                   }
                 }}
               >

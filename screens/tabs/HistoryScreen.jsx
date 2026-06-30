@@ -74,6 +74,7 @@ export default function HistoryScreen({ navigation }) {
   );
 
   const fetchSessions = async () => {
+    setLoading(true);
     try {
       const data = await getSessions();
       setSessions(data);

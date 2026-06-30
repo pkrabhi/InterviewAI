@@ -62,6 +62,7 @@ export default function SessionScreen({ route, navigation }) {
   const [isListening, setIsListening]   = useState(false);
   const [isSpeaking, setIsSpeaking]     = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const voiceEnabledRef = useRef(true);
   const [voiceModalVisible, setVoiceModalVisible] = useState(false);
   const [voiceTranscript, setVoiceTranscript]     = useState('');
   const flatListRef    = useRef(null);
@@ -124,9 +125,12 @@ export default function SessionScreen({ route, navigation }) {
     }
   }, [messages, isTyping]);
 
+  // Keep ref in sync so TTS effect never reads a stale closure value
+  useEffect(() => { voiceEnabledRef.current = voiceEnabled; }, [voiceEnabled]);
+
   // Speak Aryan's messages — skip the opening message, speak from 2nd onward
   useEffect(() => {
-    if (!voiceEnabled) return;
+    if (!voiceEnabledRef.current) return;
     const last = messages[messages.length - 1];
     if (last && last.role === 'interviewer') {
       if (!hasSpokenFirst.current) {
@@ -175,11 +179,11 @@ export default function SessionScreen({ route, navigation }) {
     }
   };
 
-  const handleSend = async () => {
-    const text = inputText.trim();
+  const handleSend = async (overrideText) => {
+    const text = (overrideText ?? inputText).trim();
     if (!text || isTyping || isComplete || !sessionId) return;
     stopSpeaking();
-    setInputText('');
+    if (!overrideText) setInputText('');
     addMessage({ role: 'candidate', content: text });
     setTyping(true);
     try {
@@ -242,12 +246,11 @@ export default function SessionScreen({ route, navigation }) {
   };
 
   const handleVoiceSend = () => {
-    if (voiceTranscript.trim()) {
-      setInputText(voiceTranscript.trim());
-    }
+    const text = voiceTranscript.trim();
+    stopVoiceRecording();
     setVoiceModalVisible(false);
     setVoiceTranscript('');
-    setIsListening(false);
+    if (text) handleSend(text);
   };
 
   const handleVoiceCancel = () => {
