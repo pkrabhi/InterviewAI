@@ -7,7 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session/providers/google';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS } from '../../constants/theme';
+import { SPACING, RADIUS, FONT_SIZE } from '../../constants/theme';
+import useThemeStore from '../../store/useThemeStore';
 import ScreenBackground from '../../components/ScreenBackground';
 import GlassCard from '../../components/GlassCard';
 import useAuthStore from '../../store/useAuthStore';
@@ -17,36 +18,17 @@ WebBrowser.maybeCompleteAuthSession();
 
 const WEB_CLIENT_ID = '77684419524-rji22pi8ans8lacuujbt31rdmsrbcqn6.apps.googleusercontent.com';
 
-const GlassInput = ({ icon, rightIcon, onRightIcon, ...props }) => (
-  <View style={inputStyles.wrapper}>
-    <MaterialCommunityIcons name={icon} size={18} color="rgba(255,255,255,0.4)" />
-    <TextInput style={inputStyles.input} placeholderTextColor="rgba(255,255,255,0.3)" {...props} />
+const GlassInput = ({ icon, rightIcon, onRightIcon, COLORS, ...props }) => (
+  <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, backgroundColor: COLORS.inputBg, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.inputBorder, paddingHorizontal: SPACING.md, paddingVertical: 13 }}>
+    <MaterialCommunityIcons name={icon} size={18} color={COLORS.textMuted} />
+    <TextInput style={{ flex: 1, color: COLORS.text, fontSize: FONT_SIZE.md }} placeholderTextColor={COLORS.textMuted} {...props} />
     {rightIcon && (
       <TouchableOpacity onPress={onRightIcon}>
-        <MaterialCommunityIcons name={rightIcon} size={18} color="rgba(255,255,255,0.4)" />
+        <MaterialCommunityIcons name={rightIcon} size={18} color={COLORS.textMuted} />
       </TouchableOpacity>
     )}
   </View>
 );
-
-const inputStyles = StyleSheet.create({
-  wrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 13,
-  },
-  input: {
-    flex: 1,
-    color: COLORS.text,
-    fontSize: 15,
-  },
-});
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail]           = useState('');
@@ -54,6 +36,7 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPwd]  = useState(false);
   const [loading, setLoading]       = useState(false);
   const { setUser } = useAuthStore();
+  const { COLORS } = useThemeStore();
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest({
     androidClientId: WEB_CLIENT_ID,
@@ -121,32 +104,17 @@ export default function LoginScreen({ navigation }) {
           >
             <Text style={styles.logoEmoji}>🎯</Text>
           </LinearGradient>
-          <Text style={styles.appName}>Crackd</Text>
-          <Text style={styles.tagline}>Practice interviews that feel genuinely real.</Text>
+          <Text style={[styles.appName, { color: COLORS.text }]}>Crackd</Text>
+          <Text style={[styles.tagline, { color: COLORS.textMuted }]}>Practice interviews that feel genuinely real.</Text>
         </View>
 
         {/* Glass form card */}
         <GlassCard style={styles.formCard}>
-          <Text style={styles.formTitle}>Welcome back</Text>
+          <Text style={[styles.formTitle, { color: COLORS.text }]}>Welcome back</Text>
 
           <View style={styles.fields}>
-            <GlassInput
-              icon="email-outline"
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <GlassInput
-              icon="lock-outline"
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
-              onRightIcon={() => setShowPwd(!showPassword)}
-            />
+            <GlassInput COLORS={COLORS} icon="email-outline" placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+            <GlassInput COLORS={COLORS} icon="lock-outline" placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'} onRightIcon={() => setShowPwd(!showPassword)} />
           </View>
 
           {/* Sign in button */}
@@ -169,9 +137,9 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.registerLink}>
-            <Text style={styles.registerLinkText}>
+            <Text style={[styles.registerLinkText, { color: COLORS.textMuted }]}>
               New here?{'  '}
-              <Text style={styles.registerLinkBold}>Create an account</Text>
+              <Text style={{ color: COLORS.primaryLight, fontWeight: '600' }}>Create an account</Text>
             </Text>
           </TouchableOpacity>
 
@@ -184,12 +152,12 @@ export default function LoginScreen({ navigation }) {
 
           {/* Google */}
           <TouchableOpacity
-            style={[styles.googleBtn, (!request || loading) && { opacity: 0.5 }]}
+            style={[styles.googleBtn, { backgroundColor: COLORS.inputBg, borderColor: COLORS.inputBorder }, (!request || loading) && { opacity: 0.5 }]}
             onPress={handleGoogleLogin}
             disabled={!request || loading}
           >
             <MaterialCommunityIcons name="google" size={20} color={COLORS.text} />
-            <Text style={styles.googleBtnText}>Continue with Google</Text>
+            <Text style={[styles.googleBtnText, { color: COLORS.text }]}>Continue with Google</Text>
           </TouchableOpacity>
         </GlassCard>
 
@@ -199,6 +167,7 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
+// Note: theme colors used inline; static layout styles only here
 const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
@@ -226,28 +195,14 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   logoEmoji: { fontSize: 34 },
-  appName: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    letterSpacing: -0.5,
-  },
-  tagline: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.45)',
-    textAlign: 'center',
-  },
+  appName: { fontSize: FONT_SIZE.hero, fontWeight: 'bold', letterSpacing: -0.5 },
+  tagline:  { fontSize: FONT_SIZE.sm, textAlign: 'center' },
   formCard: {
     padding: SPACING.xl,
     gap: SPACING.lg,
     marginBottom: SPACING.lg,
   },
-  formTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: -SPACING.xs,
-  },
+  formTitle: { fontSize: FONT_SIZE.lg, fontWeight: '700', marginBottom: -SPACING.xs },
   fields: {
     gap: SPACING.sm,
   },
@@ -272,31 +227,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   registerLink: { alignItems: 'center', marginTop: -SPACING.xs },
-  registerLinkText: { color: 'rgba(255,255,255,0.4)', fontSize: 14 },
-  registerLinkBold: { color: COLORS.primaryLight, fontWeight: '600' },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
-  dividerText: { color: 'rgba(255,255,255,0.3)', fontSize: 13 },
-  googleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    paddingVertical: 14,
-    borderRadius: RADIUS.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-  },
-  googleBtnText: { color: COLORS.text, fontSize: 15, fontWeight: '600' },
-  disclaimer: {
-    color: 'rgba(255,255,255,0.25)',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: SPACING.md,
-  },
+  registerLinkText: { fontSize: FONT_SIZE.sm },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(128,128,128,0.2)' },
+  dividerText: { fontSize: FONT_SIZE.sm, opacity: 0.5 },
+  googleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, paddingVertical: 14, borderRadius: RADIUS.full, borderWidth: 1 },
+  googleBtnText: { fontSize: FONT_SIZE.md, fontWeight: '600' },
+  disclaimer: { fontSize: FONT_SIZE.xs, textAlign: 'center', marginTop: SPACING.md, opacity: 0.4 },
 });

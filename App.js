@@ -8,30 +8,28 @@ import { View, ActivityIndicator } from 'react-native';
 import AppNavigator    from './navigation/AppNavigator';
 import LoginScreen     from './screens/auth/LoginScreen';
 import RegisterScreen  from './screens/auth/RegisterScreen';
-import { COLORS }      from './constants/theme';
+import { DARK_COLORS as COLORS } from './store/useThemeStore';
 import useAuthStore    from './store/useAuthStore';
+import useThemeStore   from './store/useThemeStore';
 import { getUser, getToken } from './services/authService';
 
 const AuthStack = createStackNavigator();
 
 export default function App() {
   const { isLoggedIn, isLoading, setUser, setLoading } = useAuthStore();
+  const { loadTheme } = useThemeStore();
 
-  // Check if user is already logged in on app start
   useEffect(() => {
-    const checkAuth = async () => {
+    const init = async () => {
       try {
+        await loadTheme();               // restore saved theme first
         const token = await getToken();
         const user  = await getUser();
-        if (token && user) {
-          setUser(user);
-        }
+        if (token && user) setUser(user);
       } catch (_) {}
-      finally {
-        setLoading(false);
-      }
+      finally { setLoading(false); }
     };
-    checkAuth();
+    init();
   }, []);
 
   if (isLoading) {

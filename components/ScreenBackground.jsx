@@ -1,59 +1,45 @@
 import React from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import useThemeStore from '../store/useThemeStore';
 
 export default function ScreenBackground({ children, style, variant = 'default' }) {
   const { width, height } = useWindowDimensions();
+  const { COLORS, isDark } = useThemeStore();
 
-  // Orb sizes scale with screen — large orbs give BlurView vivid colour to blur
-  const orbL  = width * 1.0;   // large orb
-  const orbM  = width * 0.75;  // medium orb
-  const orbS  = width * 0.60;  // small orb
+  const L  = width * 1.1;
+  const M  = width * 0.80;
+  const S  = width * 0.60;
 
   return (
-    <View style={[styles.root, style]}>
-      {/* ── Background gradient orbs ────────────────────────── */}
+    <View style={[styles.root, { backgroundColor: COLORS.bg }, style]}>
+      {/* Gradient orbs — vivid so BlurView has rich colour to blur over */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
 
-        {/* Top-left indigo glow */}
-        <View style={[styles.orb, {
-          width: orbL, height: orbL, borderRadius: orbL / 2,
-          top: -orbL * 0.45, left: -orbL * 0.2,
-        }]}>
-          <LinearGradient colors={['#6366F160', '#4F46E530', 'transparent']} style={styles.fill} />
+        {/* Top-left primary orb */}
+        <View style={[styles.orb, { width: L, height: L, borderRadius: L / 2, top: -L * 0.45, left: -L * 0.18 }]}>
+          <LinearGradient colors={COLORS.orb1} style={styles.fill} />
         </View>
 
-        {/* Bottom-right amber glow */}
-        <View style={[styles.orb, {
-          width: orbM, height: orbM, borderRadius: orbM / 2,
-          bottom: -orbM * 0.35, right: -orbM * 0.25,
-        }]}>
-          <LinearGradient colors={['#F59E0B45', '#EF444420', 'transparent']} style={styles.fill} />
+        {/* Bottom-right secondary orb */}
+        <View style={[styles.orb, { width: M, height: M, borderRadius: M / 2, bottom: -M * 0.30, right: -M * 0.20 }]}>
+          <LinearGradient colors={COLORS.orb2} style={styles.fill} />
         </View>
 
-        {/* Mid-left purple tint */}
-        <View style={[styles.orb, {
-          width: orbS, height: orbS, borderRadius: orbS / 2,
-          top: height * 0.35, left: -orbS * 0.45,
-        }]}>
-          <LinearGradient colors={['#818CF838', 'transparent']} style={styles.fill} />
+        {/* Mid-left accent orb */}
+        <View style={[styles.orb, { width: S, height: S, borderRadius: S / 2, top: height * 0.32, left: -S * 0.42 }]}>
+          <LinearGradient colors={COLORS.orb3} style={styles.fill} />
         </View>
 
-        {/* Center subtle indigo for interview screens */}
-        <View style={[styles.orb, {
-          width: orbM * 0.8, height: orbM * 0.8, borderRadius: (orbM * 0.8) / 2,
-          top: height * 0.55, left: width * 0.3,
-        }]}>
-          <LinearGradient colors={['#6366F120', 'transparent']} style={styles.fill} />
+        {/* Center-bottom fourth orb */}
+        <View style={[styles.orb, { width: S * 0.9, height: S * 0.9, borderRadius: S * 0.45, top: height * 0.58, left: width * 0.35 }]}>
+          <LinearGradient colors={COLORS.orb4} style={styles.fill} />
         </View>
 
-        {/* Auth variant — extra large hero orb */}
+        {/* Auth variant — hero orb */}
         {variant === 'auth' && (
-          <View style={[styles.orb, {
-            width: width * 1.3, height: width * 1.3, borderRadius: (width * 1.3) / 2,
-            top: -width * 0.6, left: -width * 0.15,
-          }]}>
-            <LinearGradient colors={['#6366F155', '#818CF830', 'transparent']} style={styles.fill} />
+          <View style={[styles.orb, { width: width * 1.4, height: width * 1.4, borderRadius: width * 0.7, top: -width * 0.65, left: -width * 0.2 }]}>
+            <LinearGradient colors={isDark ? ['#6366F165', '#818CF840', 'transparent'] : ['#F59E0B70', '#FBBF2445', 'transparent']} style={styles.fill} />
           </View>
         )}
       </View>
@@ -64,16 +50,7 @@ export default function ScreenBackground({ children, style, variant = 'default' 
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#0A0E1A',
-  },
-  orb: {
-    position: 'absolute',
-    overflow: 'hidden',
-  },
-  fill: {
-    flex: 1,
-    borderRadius: 9999,
-  },
+  root: { flex: 1 },
+  orb:  { position: 'absolute', overflow: 'hidden' },
+  fill: { flex: 1, borderRadius: 9999 },
 });

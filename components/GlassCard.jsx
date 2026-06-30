@@ -1,71 +1,77 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
+import useThemeStore from '../store/useThemeStore';
 import { ms } from '../utils/responsive';
 
 /**
- * Glass card that actually blurs on both iOS and Android.
+ * Liquid-glass card.
  *
- * iOS:     BlurView inside overflow:hidden (works perfectly)
- * Android: BlurView with borderRadius applied directly — expo-blur 56 supports
- *          this via RenderEffect (Android 12+). No overflow:hidden needed.
- * Web:     CSS backdropFilter fallback
+ * iOS     — BlurView (overflow:hidden on container)
+ * Android — BlurView with borderRadius on the view itself (expo-blur 56, Android 12+)
+ *           experimentalBlurMethod="dimezisBlurView" for wider support
+ * Web     — CSS backdropFilter
+ *
+ * Both tint and border automatically adapt to the active theme.
  */
 export default function GlassCard({
   children,
   style,
-  intensity = 22,
+  intensity = 24,
   tint,
-  borderColor = 'rgba(255, 255, 255, 0.13)',
+  borderColor,
   borderRadius: radiusProp,
   ...props
 }) {
+  const { COLORS, isDark } = useThemeStore();
   const radius = radiusProp ?? ms(20);
-  // Android gets a slightly more opaque tint since RenderEffect blur is subtler
-  const resolvedTint = tint ?? (
-    Platform.OS === 'android'
-      ? 'rgba(12, 18, 36, 0.72)'
-      : 'rgba(15, 23, 41, 0.48)'
-  );
+
+  // Let callers override, otherwise use theme defaults
+  const resolvedTint   = tint        ?? COLORS.glassTint;
+  const resolvedBorder = borderColor ?? COLORS.glassBorder;
+
+  // Android needs slightly higher intensity to look comparable to iOS
+  const resolvedIntensity = Platform.OS === 'android'
+    ? Math.min(intensity + 10, 60)
+    : intensity;
 
   if (Platform.OS === 'web') {
     return (
-      <View style={[styles.base, { borderColor, borderRadius: radius, overflow: 'hidden' }, style]} {...props}>
-        <View style={[StyleSheet.absoluteFill, { backdropFilter: 'blur(20px)', backgroundColor: resolvedTint, borderRadius: radius }]} />
+      <View style={[{ borderRadius: radius, borderWidth: 1, borderColor: resolvedBorder, overflow: 'hidden' }, style]} {...props}>
+        <View style={{ ...webBlur, backgroundColor: resolvedTint, borderRadius: radius }} />
         <View style={{ position: 'relative' }}>{children}</View>
       </View>
     );
   }
 
   if (Platform.OS === 'android') {
-    // Android: BlurView with its own borderRadius — no overflow:hidden on parent
-    // Content clipped inside its own overflow:hidden wrapper
     return (
-      <View style={[styles.base, { borderColor, borderRadius: radius }, style]} {...props}>
+      <View style={[{ borderRadius: radius, borderWidth: 1, borderColor: resolvedBorder }, style]} {...props}>
         <BlurView
-          intensity={intensity}
-          tint="dark"
-          style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
+          intensity={resolvedIntensity}
+          tint={isDark ? 'dark' : 'light'}
+          style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: radius }]}
           experimentalBlurMethod="dimezisBlurView"
         />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: resolvedTint, borderRadius: radius }]} />
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: resolvedTint, borderRadius: radius }} />
         <View style={{ borderRadius: radius, overflow: 'hidden' }}>{children}</View>
       </View>
     );
   }
 
-  // iOS — classic approach with overflow:hidden on container
+  // iOS
   return (
-    <View style={[styles.base, { borderColor, borderRadius: radius, overflow: 'hidden' }, style]} {...props}>
-      <BlurView intensity={intensity} tint="dark" style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: resolvedTint }]} />
+    <View style={[{ borderRadius: radius, borderWidth: 1, borderColor: resolvedBorder, overflow: 'hidden' }, style]} {...props}>
+      <BlurView intensity={resolvedIntensity} tint={isDark ? 'dark' : 'light'} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: resolvedTint }} />
       <View style={{ position: 'relative' }}>{children}</View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderWidth: 1,
-  },
-});
+const webBlur = {
+  position: 'absolute',
+  top: 0, left: 0, right: 0, bottom: 0,
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+};

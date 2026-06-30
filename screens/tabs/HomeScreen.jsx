@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, ActivityIndicator,
+  ScrollView, ActivityIndicator, useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../constants/theme';
+import { SPACING, RADIUS, FONT_SIZE } from '../../constants/theme';
+import useThemeStore from '../../store/useThemeStore';
 import ScreenBackground from '../../components/ScreenBackground';
 import GlassCard from '../../components/GlassCard';
 import useAuthStore from '../../store/useAuthStore';
@@ -13,77 +14,60 @@ import { getSessions } from '../../services/interviewService';
 import { ROLES } from '../../constants/roles';
 
 const getGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
   return 'Good evening';
 };
 
 export default function HomeScreen({ navigation }) {
   const { user }                = useAuthStore();
+  const { COLORS }              = useThemeStore();
+  const { width }               = useWindowDimensions();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading]   = useState(true);
+
+  const styles = useMemo(() => makeStyles(COLORS, width), [COLORS, width]);
 
   useEffect(() => { fetchSessions(); }, []);
 
   const fetchSessions = async () => {
-    try {
-      const data = await getSessions();
-      setSessions(data);
-    } catch (e) {
-      console.error('getSessions failed:', e?.response?.status, e?.message);
-    } finally {
-      setLoading(false);
-    }
+    try { const data = await getSessions(); setSessions(data); }
+    catch (_) {}
+    finally { setLoading(false); }
   };
 
-  const completedSessions = sessions.filter((s) => s.status === 'COMPLETED');
-  const avgScore = completedSessions.length > 0
-    ? Math.round(completedSessions.reduce((sum, s) => sum + (s.overallScore || 0), 0) / completedSessions.length)
-    : null;
-  const bestScore = completedSessions.length > 0
-    ? Math.max(...completedSessions.map((s) => s.overallScore || 0))
-    : null;
-
+  const completed = sessions.filter((s) => s.status === 'COMPLETED');
+  const avgScore  = completed.length ? Math.round(completed.reduce((s, x) => s + (x.overallScore || 0), 0) / completed.length) : null;
+  const bestScore = completed.length ? Math.max(...completed.map((x) => x.overallScore || 0)) : null;
   const firstName = user?.name?.split(' ')[0] || 'there';
 
   return (
     <ScreenBackground>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPACING.xxl }}>
+
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>{getGreeting()}, {firstName} 👋</Text>
+          <View style={{ flex: 1, marginRight: SPACING.sm }}>
+            <Text style={styles.greeting} numberOfLines={1}>{getGreeting()}, {firstName} 👋</Text>
             <Text style={styles.subGreeting}>Ready to practice today?</Text>
           </View>
           <View style={[styles.planBadge, user?.plan === 'PRO' && styles.planBadgePro]}>
-            <Text style={[styles.planText, user?.plan === 'PRO' && styles.planTextPro]}>
+            <Text style={[styles.planText, user?.plan === 'PRO' && { color: COLORS.accent }]}>
               {user?.plan === 'PRO' ? '⭐ PRO' : 'FREE'}
             </Text>
           </View>
         </View>
 
-        {/* CTA card */}
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => navigation.navigate('InterviewSetup')}
-          style={styles.ctaWrapper}
-        >
-          <LinearGradient
-            colors={['#5B5FEF', '#7C3AED']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.ctaCard}
-          >
-            {/* Subtle inner glow */}
+        {/* CTA */}
+        <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('InterviewSetup')} style={styles.ctaWrapper}>
+          <LinearGradient colors={['#5B5FEF', '#7C3AED']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ctaCard}>
             <View style={styles.ctaGlow} />
-            <View style={styles.ctaContent}>
+            <View style={{ flex: 1 }}>
               <Text style={styles.ctaTitle}>Start New Interview</Text>
-              <Text style={styles.ctaSubtitle}>Practice with AI Interviewer Aryan</Text>
+              <Text style={styles.ctaSub}>Practice with AI Interviewer Aryan</Text>
             </View>
-            <View style={styles.ctaIcon}>
-              <MaterialCommunityIcons name="arrow-right-circle" size={44} color="rgba(255,255,255,0.9)" />
-            </View>
+            <MaterialCommunityIcons name="arrow-right-circle" size={Math.round(width * 0.11)} color="rgba(255,255,255,0.9)" />
           </LinearGradient>
         </TouchableOpacity>
 
@@ -91,41 +75,41 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.statsRow}>
           {[
             { value: sessions.length || '—', label: 'Total' },
-            { value: avgScore ?? '—', label: 'Avg Score' },
-            { value: bestScore ?? '—', label: 'Best Score' },
-          ].map((stat) => (
-            <GlassCard key={stat.label} style={styles.statCard} intensity={18}>
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
+            { value: avgScore ?? '—',        label: 'Avg' },
+            { value: bestScore ?? '—',       label: 'Best' },
+          ].map((s) => (
+            <GlassCard key={s.label} style={styles.statCard} intensity={20}>
+              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{s.value}</Text>
+              <Text style={styles.statLabel}>{s.label}</Text>
             </GlassCard>
           ))}
         </View>
 
-        {/* Quick start */}
+        {/* Quick Start */}
         <Text style={styles.sectionTitle}>Quick Start</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: SPACING.md, paddingRight: SPACING.sm }}>
           {ROLES.map((role) => (
             <TouchableOpacity
               key={role.id}
               onPress={() => navigation.navigate('InterviewSetup', { preselectedRole: role })}
-              style={styles.chipWrapper}
+              style={{ marginRight: SPACING.sm }}
             >
-              <GlassCard style={styles.chip} intensity={15}>
-                <Text style={styles.chipEmoji}>{role.emoji}</Text>
-                <Text style={styles.chipLabel}>{role.label}</Text>
+              <GlassCard style={styles.chip} intensity={16}>
+                <Text style={{ fontSize: FONT_SIZE.lg }}>{role.emoji}</Text>
+                <Text style={styles.chipLabel} numberOfLines={1}>{role.label}</Text>
               </GlassCard>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        {/* Recent sessions */}
-        <Text style={styles.sectionTitle}>Recent Sessions</Text>
+        {/* Recent Sessions */}
+        <Text style={[styles.sectionTitle, { marginTop: SPACING.md }]}>Recent Sessions</Text>
         {loading ? (
           <ActivityIndicator color={COLORS.primary} style={{ margin: SPACING.lg }} />
         ) : sessions.length === 0 ? (
-          <GlassCard style={styles.emptyCard}>
-            <MaterialCommunityIcons name="history" size={32} color="rgba(255,255,255,0.2)" />
-            <Text style={styles.emptyText}>No interviews yet. Start your first one!</Text>
+          <GlassCard style={[styles.emptyCard, { marginHorizontal: SPACING.md }]}>
+            <MaterialCommunityIcons name="history" size={32} color={COLORS.textMuted} />
+            <Text style={[styles.statLabel, { textAlign: 'center' }]}>No interviews yet. Start your first one!</Text>
           </GlassCard>
         ) : (
           sessions.slice(0, 3).map((session) => {
@@ -146,35 +130,33 @@ export default function HomeScreen({ navigation }) {
                     });
                   }
                 }}
+                style={{ marginHorizontal: SPACING.md, marginBottom: SPACING.sm }}
               >
-                <GlassCard style={styles.sessionCard} intensity={16}>
-                  <View style={styles.sessionLeft}>
-                    <Text style={styles.sessionRole}>{session.role} • {session.level}</Text>
+                <GlassCard style={styles.sessionCard} intensity={18}>
+                  <View style={{ flex: 1, gap: 4, marginRight: SPACING.sm }}>
+                    <Text style={styles.sessionRole} numberOfLines={1}>
+                      {session.role}  •  {session.level}
+                    </Text>
                     <Text style={styles.sessionDate}>
                       {new Date(session.createdAt).toLocaleDateString('en-IN')}
                     </Text>
                   </View>
                   {session.overallScore ? (
-                    <Text style={[styles.sessionScore, { color: scoreColor }]}>
-                      {session.overallScore}
-                    </Text>
+                    <Text style={[styles.sessionScore, { color: scoreColor }]}>{session.overallScore}</Text>
                   ) : (
-                    <Text style={styles.sessionActive}>ACTIVE</Text>
+                    <Text style={[styles.sessionActive, { color: COLORS.accent }]}>ACTIVE</Text>
                   )}
                 </GlassCard>
               </TouchableOpacity>
             );
           })
         )}
-
-        <View style={{ height: SPACING.xxl }} />
       </ScrollView>
     </ScreenBackground>
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1 },
+const makeStyles = (COLORS, width) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -183,129 +165,65 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.md,
   },
-  greeting: {
-    fontSize: FONT_SIZE.xl,
-    color: COLORS.text,
-    fontWeight: 'bold',
-    letterSpacing: -0.3,
-  },
-  subGreeting: { fontSize: FONT_SIZE.sm, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
+  greeting:    { fontSize: FONT_SIZE.xl, color: COLORS.text, fontWeight: 'bold', letterSpacing: -0.3 },
+  subGreeting: { fontSize: FONT_SIZE.sm, color: COLORS.textMuted, marginTop: 2 },
   planBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 5,
+    paddingHorizontal: SPACING.sm, paddingVertical: 5,
     borderRadius: RADIUS.full,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: COLORS.inputBg,
+    borderWidth: 1, borderColor: COLORS.glassBorder,
   },
-  planBadgePro: {
-    backgroundColor: 'rgba(245,158,11,0.15)',
-    borderColor: 'rgba(245,158,11,0.35)',
-  },
-  planText: { fontSize: FONT_SIZE.xs, fontWeight: '700', color: 'rgba(255,255,255,0.45)' },
-  planTextPro: { color: COLORS.accent },
+  planBadgePro: { backgroundColor: COLORS.accent + '22', borderColor: COLORS.accent + '55' },
+  planText: { fontSize: FONT_SIZE.xs, fontWeight: '700', color: COLORS.textMuted },
+
   ctaWrapper: {
-    marginHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
-    borderRadius: RADIUS.xl,
-    overflow: 'hidden',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
+    marginHorizontal: SPACING.md, marginBottom: SPACING.md,
+    borderRadius: RADIUS.xl, overflow: 'hidden',
     elevation: 14,
   },
   ctaCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.lg,
-    paddingVertical: SPACING.xl,
-    borderRadius: RADIUS.xl,
-    overflow: 'hidden',
+    flexDirection: 'row', alignItems: 'center',
+    padding: SPACING.lg, paddingVertical: SPACING.xl,
+    borderRadius: RADIUS.xl, overflow: 'hidden',
   },
   ctaGlow: {
-    position: 'absolute',
-    top: -40,
-    left: '30%',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    position: 'absolute', top: -40, left: '30%',
+    width: 120, height: 120, borderRadius: 60,
     backgroundColor: 'rgba(255,255,255,0.12)',
   },
-  ctaContent: { flex: 1 },
-  ctaTitle: {
-    color: '#fff',
-    fontSize: FONT_SIZE.xl,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    letterSpacing: -0.3,
-  },
-  ctaSubtitle: { color: 'rgba(255,255,255,0.65)', fontSize: FONT_SIZE.sm },
-  ctaIcon: { marginLeft: SPACING.sm },
+  ctaTitle: { color: '#fff', fontSize: FONT_SIZE.xl, fontWeight: 'bold', marginBottom: 4, letterSpacing: -0.3 },
+  ctaSub:   { color: 'rgba(255,255,255,0.7)', fontSize: FONT_SIZE.sm },
+
   statsRow: {
     flexDirection: 'row',
     marginHorizontal: SPACING.md,
     gap: SPACING.sm,
     marginBottom: SPACING.md,
   },
-  statCard: {
-    flex: 1,
-    padding: SPACING.md,
-    alignItems: 'center',
-    gap: 2,
-  },
+  statCard:  { flex: 1, padding: SPACING.sm, alignItems: 'center', gap: 2 },
   statValue: { color: COLORS.text, fontSize: FONT_SIZE.xl, fontWeight: 'bold' },
-  statLabel: { color: 'rgba(255,255,255,0.4)', fontSize: FONT_SIZE.xs },
+  statLabel: { color: COLORS.textMuted, fontSize: FONT_SIZE.xs },
+
   sectionTitle: {
-    color: COLORS.text,
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '700',
+    color: COLORS.text, fontSize: FONT_SIZE.lg, fontWeight: '700',
     paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.sm,
-    marginTop: SPACING.sm,
-    letterSpacing: -0.2,
+    marginBottom: SPACING.sm, letterSpacing: -0.2,
   },
-  chipsScroll: { paddingLeft: SPACING.md, marginBottom: SPACING.md },
-  chipWrapper: { marginRight: SPACING.sm },
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
     borderRadius: RADIUS.full,
   },
-  chipEmoji: { fontSize: 16 },
-  chipLabel: { color: COLORS.text, fontSize: FONT_SIZE.sm, fontWeight: '500' },
-  emptyCard: {
-    padding: SPACING.xl,
-    marginHorizontal: SPACING.md,
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  emptyText: { color: 'rgba(255,255,255,0.35)', fontSize: 14, textAlign: 'center' },
+  chipLabel: { color: COLORS.text, fontSize: FONT_SIZE.sm, fontWeight: '500', maxWidth: width * 0.22 },
+
+  emptyCard: { padding: SPACING.xl, alignItems: 'center', gap: SPACING.sm },
+
   sessionCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: SPACING.md,
-    marginHorizontal: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderRadius: RADIUS.lg,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    padding: SPACING.md, borderRadius: RADIUS.lg,
   },
-  sessionLeft: { gap: 4 },
-  sessionRole: {
-    color: COLORS.text,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: '500',
-    textTransform: 'capitalize',
-  },
-  sessionDate: { color: 'rgba(255,255,255,0.35)', fontSize: FONT_SIZE.xs },
-  sessionScore: { fontSize: FONT_SIZE.xl, fontWeight: 'bold' },
-  sessionActive: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: '700',
-    color: COLORS.accent,
-    letterSpacing: 0.5,
-  },
+  sessionRole:   { color: COLORS.text, fontSize: FONT_SIZE.sm, fontWeight: '500', textTransform: 'capitalize' },
+  sessionDate:   { color: COLORS.textMuted, fontSize: FONT_SIZE.xs },
+  sessionScore:  { fontSize: FONT_SIZE.xl, fontWeight: 'bold' },
+  sessionActive: { fontSize: FONT_SIZE.xs, fontWeight: '700', letterSpacing: 0.5 },
 });
