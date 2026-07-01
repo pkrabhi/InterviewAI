@@ -30,6 +30,24 @@ export const ROLES = [
     topics: ['React Hooks', 'Redux', 'Performance'],
   },
   {
+    id: 'python',
+    label: 'Python Backend',
+    emoji: '🐍',
+    topics: ['Django/FastAPI', 'Async & GIL', 'Pandas/NumPy'],
+  },
+  {
+    id: 'node',
+    label: 'Node.js Backend',
+    emoji: '💚',
+    topics: ['Express/NestJS', 'Event Loop', 'Async Patterns'],
+  },
+  {
+    id: 'dotnet',
+    label: '.NET / C#',
+    emoji: '🔷',
+    topics: ['ASP.NET Core', 'Entity Framework', 'LINQ'],
+  },
+  {
     id: 'hr',
     label: 'HR Round',
     emoji: '🤝',

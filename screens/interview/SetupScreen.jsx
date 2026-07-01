@@ -121,7 +121,7 @@ export default function SetupScreen({ navigation, route }) {
     </GlassCard>
   );
 
-  // ── Step 1: Role — auto-fit grid, no scroll ────────────────────────
+  // ── Step 1: Role — scrollable grid (list can grow over time) ───────
   const rows = ROLES.reduce((acc, item, i) => {
     if (i % 2 === 0) acc.push([]);
     acc[acc.length - 1].push(item);
@@ -132,10 +132,13 @@ export default function SetupScreen({ navigation, route }) {
     <>
       <View style={styles.contentArea}>
         <Text style={styles.stepTitle}>What role are you interviewing for?</Text>
-        {/* Grid — each row gets equal flex height, fills all available space */}
-        <View style={{ flex: 1, gap: SPACING.xs }}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ gap: SPACING.xs, paddingBottom: SPACING.sm }}
+          showsVerticalScrollIndicator={false}
+        >
           {rows.map((row, ri) => (
-            <View key={ri} style={{ flex: 1, flexDirection: 'row', gap: SPACING.xs }}>
+            <View key={ri} style={{ flexDirection: 'row', gap: SPACING.xs }}>
               {row.map((item) => {
                 const active = selectedRole?.id === item.id;
                 return (
@@ -163,7 +166,7 @@ export default function SetupScreen({ navigation, route }) {
               {row.length === 1 && <View style={{ flex: 1 }} />}
             </View>
           ))}
-        </View>
+        </ScrollView>
       </View>
 
       <NavBar
@@ -390,9 +393,10 @@ const makeStyles = (COLORS) => StyleSheet.create({
   stepSub:   { fontSize: FONT_SIZE.sm, color: COLORS.textMuted, marginBottom: SPACING.sm, lineHeight: 19 },
   sectionLabel: { fontSize: FONT_SIZE.xs, fontWeight: '600', color: COLORS.textMuted, marginBottom: SPACING.xs, textTransform: 'uppercase', letterSpacing: 0.8 },
 
-  // Role cards — fill flex rows, no fixed height
+  // Role cards — fixed height, grid scrolls if the list grows
   roleCard: {
     flex: 1,
+    minHeight: 88,
     padding: SPACING.sm,
     alignItems: 'flex-start',
     justifyContent: 'center',
