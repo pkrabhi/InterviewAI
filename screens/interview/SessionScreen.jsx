@@ -309,7 +309,7 @@ export default function SessionScreen({ route, navigation }) {
     stopSpeaking();
     stopVoiceRecording();
     try { await endSession(sessionId); } catch (_) {}
-    navigation.navigate('InterviewReport', { sessionId });
+    navigation.navigate('InterviewReport', { sessionId, role: role?.id || role?.label, level });
   };
 
   const handleEndInterview = () => {
@@ -425,7 +425,7 @@ export default function SessionScreen({ route, navigation }) {
         {/* Interview complete banner */}
         {isComplete && (
           <TouchableOpacity
-            onPress={() => navigation.navigate('InterviewReport', { sessionId })}
+            onPress={() => navigation.navigate('InterviewReport', { sessionId, role: role?.id || role?.label, level })}
             style={{ margin: SPACING.md, borderRadius: RADIUS.md, overflow: 'hidden' }}
           >
             <GlassCard

@@ -138,7 +138,7 @@ export default function HomeScreen({ navigation }) {
                 key={session.id}
                 onPress={() => {
                   if (session.status === 'COMPLETED') {
-                    navigation.navigate('InterviewReport', { sessionId: session.id });
+                    navigation.navigate('InterviewReport', { sessionId: session.id, role: session.role, level: session.level });
                   } else {
                     navigation.navigate('InterviewSession', {
                       resumeSessionId: session.id,

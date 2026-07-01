@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
-  TouchableOpacity, ActivityIndicator,
+  TouchableOpacity, ActivityIndicator, Alert, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -11,6 +11,8 @@ import useThemeStore from '../../store/useThemeStore';
 import ScreenBackground from '../../components/ScreenBackground';
 import GlassCard from '../../components/GlassCard';
 import { getSessions } from '../../services/interviewService';
+import { getReport } from '../../services/reportService';
+import { downloadReportPdf } from '../../utils/pdfReport';
 
 const ScoreBadge = ({ score, COLORS }) => {
   if (!score) return null;
@@ -22,10 +24,19 @@ const ScoreBadge = ({ score, COLORS }) => {
   );
 };
 
+const parseJsonField = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try { return JSON.parse(value); } catch { return []; }
+  }
+  return [];
+};
+
 export default function HistoryScreen({ navigation }) {
   const { COLORS } = useThemeStore();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading]   = useState(true);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const styles = useMemo(() => makeStyles(COLORS), [COLORS]);
 
@@ -36,6 +47,22 @@ export default function HistoryScreen({ navigation }) {
     try { const data = await getSessions(); setSessions(data); }
     catch (_) {}
     finally { setLoading(false); }
+  };
+
+  const handleDownloadPdf = async (session) => {
+    if (downloadingId) return;
+    setDownloadingId(session.id);
+    try {
+      const data = await getReport(session.id);
+      const report = { ...data, qaReview: parseJsonField(data.qaReview) };
+      await downloadReportPdf(report, { role: session.role, level: session.level });
+    } catch (e) {
+      const msg = 'Could not download the report. Please try again.';
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert('Download Failed', msg);
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   if (loading) {
@@ -78,7 +105,7 @@ export default function HistoryScreen({ navigation }) {
               <TouchableOpacity
                 onPress={() => {
                   if (item.status === 'COMPLETED') {
-                    navigation.navigate('InterviewReport', { sessionId: item.id });
+                    navigation.navigate('InterviewReport', { sessionId: item.id, role: item.role, level: item.level });
                   } else {
                     navigation.navigate('InterviewSession', {
                       resumeSessionId: item.id,
@@ -113,7 +140,20 @@ export default function HistoryScreen({ navigation }) {
                         <Text style={{ color: COLORS.accent, fontSize: FONT_SIZE.xs, fontWeight: '700' }}>Resume</Text>
                       </View>
                     ) : (
-                      <ScoreBadge score={item.overallScore} COLORS={COLORS} />
+                      <>
+                        <ScoreBadge score={item.overallScore} COLORS={COLORS} />
+                        <TouchableOpacity
+                          onPress={(e) => { e.stopPropagation?.(); handleDownloadPdf(item); }}
+                          disabled={downloadingId === item.id}
+                          style={styles.downloadIconBtn}
+                        >
+                          {downloadingId === item.id ? (
+                            <ActivityIndicator size="small" color={COLORS.primaryLight} />
+                          ) : (
+                            <MaterialCommunityIcons name="file-pdf-box" size={18} color={COLORS.primaryLight} />
+                          )}
+                        </TouchableOpacity>
+                      </>
                     )}
                     <MaterialCommunityIcons name="chevron-right" size={18} color={COLORS.textMuted + '55'} />
                   </View>
@@ -139,4 +179,9 @@ const makeStyles = (COLORS) => StyleSheet.create({
   emptyCard: { padding: SPACING.xl, alignItems: 'center', gap: SPACING.md, borderRadius: RADIUS.xl },
   emptyTitle: { color: COLORS.text, fontSize: FONT_SIZE.lg, fontWeight: '600' },
   emptySubtitle: { color: COLORS.textMuted, fontSize: FONT_SIZE.sm, textAlign: 'center' },
+  downloadIconBtn: {
+    width: 30, height: 30, borderRadius: RADIUS.sm,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: COLORS.primary + '18', borderWidth: 1, borderColor: COLORS.primary + '35',
+  },
 });

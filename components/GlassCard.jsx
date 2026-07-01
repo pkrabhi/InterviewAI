@@ -107,15 +107,22 @@ export default function GlassCard({
 
   if (Platform.OS === 'android') {
     return (
+      // Outer view carries elevation/shadow WITHOUT overflow:hidden — Android clips
+      // the elevation shadow if the same view also clips its content.
       <View style={[outerShell, style]} {...props}>
-        <BlurView
-          intensity={resolvedIntensity}
-          tint={isDark ? 'dark' : 'light'}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: radius }}
-          experimentalBlurMethod="dimezisBlurView"
-        />
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: resolvedTint, borderRadius: radius }} />
-        <GlassLayers />
+        {/* Inner clip container — this is what actually rounds the blur/gradient layers.
+            Without it, the BlurView's native surface bleeds past the rounded corners
+            and the card edges render square on Android. */}
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: radius, overflow: 'hidden' }}>
+          <BlurView
+            intensity={resolvedIntensity}
+            tint={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+            experimentalBlurMethod="dimezisBlurView"
+          />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: resolvedTint }]} />
+          <GlassLayers />
+        </View>
         {/* Content wrapper — carries all layout/padding so children are correctly placed */}
         <View style={[{ borderRadius: radius, overflow: 'hidden' }, contentStyle]}>
           {children}

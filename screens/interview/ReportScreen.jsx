@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, ActivityIndicator, Animated,
+  TouchableOpacity, ActivityIndicator, Animated, Alert, Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import ScreenBackground from '../../components/ScreenBackground';
 import GlassCard from '../../components/GlassCard';
 import ScoreGauge from '../../components/ScoreGauge';
 import { getReport } from '../../services/reportService';
+import { downloadReportPdf } from '../../utils/pdfReport';
 
 // Animated score bar
 function ScoreBar({ label, score, COLORS }) {
@@ -78,13 +79,30 @@ const parseJsonField = (value) => {
 };
 
 export default function ReportScreen({ route, navigation }) {
-  const { sessionId } = route.params || {};
+  const { sessionId, role, level } = route.params || {};
   const { COLORS } = useThemeStore();
   const [report, setReport]   = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const retriesRef = useRef(0);
   const isMounted  = useRef(true);
+
+  const handleDownloadPdf = async () => {
+    if (!report || downloading) return;
+    setDownloading(true);
+    try {
+      await downloadReportPdf(report, { role: role?.label || role, level });
+    } catch (e) {
+      if (Platform.OS === 'web') {
+        window.alert('Could not generate the PDF. Please try again.');
+      } else {
+        Alert.alert('Download Failed', 'Could not generate the PDF. Please try again.');
+      }
+    } finally {
+      if (isMounted.current) setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     isMounted.current = true;
@@ -104,6 +122,7 @@ export default function ReportScreen({ route, navigation }) {
         strengths:    parseJsonField(data.strengths),
         improvements: parseJsonField(data.improvements),
         nextTopics:   parseJsonField(data.nextTopics),
+        qaReview:     parseJsonField(data.qaReview),
       });
     } catch (e) {
       if (!isMounted.current) return;
@@ -213,6 +232,23 @@ export default function ReportScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity
+          style={styles.downloadBtnWrapper}
+          onPress={handleDownloadPdf}
+          disabled={downloading}
+        >
+          <GlassCard style={[styles.downloadBtn, { opacity: downloading ? 0.6 : 1 }]} intensity={18} borderColor={COLORS.glassBorder}>
+            {downloading ? (
+              <ActivityIndicator size="small" color={COLORS.primaryLight} />
+            ) : (
+              <MaterialCommunityIcons name="file-pdf-box" size={18} color={COLORS.primaryLight} />
+            )}
+            <Text style={[styles.downloadBtnText, { color: COLORS.primaryLight }]}>
+              {downloading ? 'Preparing PDF...' : 'Download Q&A Report (PDF)'}
+            </Text>
+          </GlassCard>
+        </TouchableOpacity>
+
         <GlassCard
           style={styles.proNudge}
           tint="rgba(99,102,241,0.12)"
@@ -261,6 +297,9 @@ const styles = StyleSheet.create({
   tryAgainText: { color: '#fff', fontWeight: '700' },
   homeBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, padding: SPACING.md, borderRadius: RADIUS.md },
   homeBtnText: { fontWeight: '600' },
+  downloadBtnWrapper: { marginHorizontal: SPACING.md, marginBottom: SPACING.md, borderRadius: RADIUS.md },
+  downloadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md },
+  downloadBtnText: { fontWeight: '700', fontSize: 14 },
   proNudge: { padding: SPACING.lg, marginHorizontal: SPACING.md, marginBottom: SPACING.md, alignItems: 'center', gap: SPACING.sm },
   proNudgeTitle: { fontSize: 16, fontWeight: '700' },
   proNudgeSubtitle: { fontSize: 13 },

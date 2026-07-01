@@ -50,7 +50,8 @@
           "microphonePermission": "Allow Crackd to use the microphone for voice answers.",
           "speechRecognitionPermission": "Allow Crackd to recognise your speech for voice answers."
         }
-      ]
+      ],
+      "expo-sharing"
     ]
   }
 }
