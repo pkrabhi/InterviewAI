@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, TextInput, Alert, ActivityIndicator,
+  ScrollView, TextInput, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -29,6 +29,24 @@ function StepBar({ current, total, COLORS, styles }) {
       ))}
     </View>
   );
+}
+
+// Backend now returns structured resume JSON ({ summary, skills, projects, companies,
+// yearsExperience }) instead of a plain paragraph — render it back into readable text.
+// Falls back to showing the raw string for any legacy/unparseable response.
+function describeResumeSummary(raw) {
+  try {
+    const data = JSON.parse(raw);
+    const parts = [];
+    if (data.summary) parts.push(data.summary);
+    if (Array.isArray(data.skills) && data.skills.length) parts.push(`Skills: ${data.skills.slice(0, 6).join(', ')}`);
+    if (Array.isArray(data.projects) && data.projects.length) {
+      parts.push(`Projects: ${data.projects.slice(0, 3).map((p) => p.name || p).join(', ')}`);
+    }
+    return parts.join(' • ') || raw;
+  } catch (_) {
+    return raw;
+  }
 }
 
 export default function SetupScreen({ navigation, route }) {
@@ -66,11 +84,21 @@ export default function SetupScreen({ navigation, route }) {
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append('resume', { uri: file.uri, name: file.name, type: 'application/pdf' });
+      // On web, expo-document-picker gives a blob: object URL as `uri` — the browser's
+      // native FormData needs the actual File object (`file.file`) to send real bytes.
+      // The {uri, name, type} shape only works on native, where RN's fetch polyfill reads
+      // the file from that URI itself.
+      if (Platform.OS === 'web') {
+        formData.append('resume', file.file, file.name);
+      } else {
+        formData.append('resume', { uri: file.uri, name: file.name, type: 'application/pdf' });
+      }
       const response = await api.post('/api/resume/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setResumeSummary(response.data.summary);
     } catch (e) {
-      Alert.alert('Upload failed', 'Could not process resume. You can skip this step.');
+      const msg = e?.response?.data || 'Could not process resume. You can skip this step.';
+      if (Platform.OS === 'web') window.alert(`Upload failed: ${msg}`);
+      else Alert.alert('Upload failed', msg);
       setResumeFile(null);
     } finally {
       setUploading(false);
@@ -307,7 +335,7 @@ export default function SetupScreen({ navigation, route }) {
               <MaterialCommunityIcons name="brain" size={15} color={COLORS.primary} />
               <Text style={{ color: COLORS.primary, fontSize: FONT_SIZE.sm, fontWeight: '600' }}>AI detected</Text>
             </View>
-            <Text style={styles.stepSub} numberOfLines={3}>{resumeSummary}</Text>
+            <Text style={styles.stepSub} numberOfLines={4}>{describeResumeSummary(resumeSummary)}</Text>
           </GlassCard>
         ) : null}
       </View>
