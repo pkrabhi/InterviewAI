@@ -12,6 +12,7 @@ import GlassCard from '../../components/GlassCard';
 import useAuthStore from '../../store/useAuthStore';
 import { getSessions } from '../../services/interviewService';
 import { ROLES } from '../../constants/roles';
+import { VERTICAL_SWIPE_STYLE } from '../../utils/webTouch';
 
 const getGreeting = () => {
   const h = new Date().getHours();
@@ -60,7 +61,7 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {/* CTA */}
-        <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.navigate('InterviewSetup')} style={styles.ctaWrapper}>
+        <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.navigate('InterviewSetup')} style={[styles.ctaWrapper, VERTICAL_SWIPE_STYLE]}>
           <GlassCard
             style={styles.ctaCard}
             intensity={45}
@@ -149,7 +150,7 @@ export default function HomeScreen({ navigation }) {
                     });
                   }
                 }}
-                style={{ marginHorizontal: SPACING.md, marginBottom: SPACING.sm }}
+                style={[{ marginHorizontal: SPACING.md, marginBottom: SPACING.sm }, VERTICAL_SWIPE_STYLE]}
               >
                 <GlassCard style={styles.sessionCard} intensity={18}>
                   <View style={{ flex: 1, gap: 4, marginRight: SPACING.sm }}>

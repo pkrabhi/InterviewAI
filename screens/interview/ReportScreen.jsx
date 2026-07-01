@@ -12,6 +12,7 @@ import GlassCard from '../../components/GlassCard';
 import ScoreGauge from '../../components/ScoreGauge';
 import { getReport } from '../../services/reportService';
 import { downloadReportPdf } from '../../utils/pdfReport';
+import { VERTICAL_SWIPE_STYLE } from '../../utils/webTouch';
 
 // Animated score bar
 function ScoreBar({ label, score, COLORS }) {
@@ -219,7 +220,7 @@ export default function ReportScreen({ route, navigation }) {
 
         <View style={styles.actions}>
           <TouchableOpacity
-            style={styles.tryAgainBtnWrapper}
+            style={[styles.tryAgainBtnWrapper, VERTICAL_SWIPE_STYLE]}
             onPress={() => navigation.navigate('InterviewSetup')}
           >
             <LinearGradient colors={['#6366F1', '#818CF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.tryAgainBtn}>
@@ -227,13 +228,13 @@ export default function ReportScreen({ route, navigation }) {
               <Text style={styles.tryAgainText}>Try Again</Text>
             </LinearGradient>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.homeBtn, { backgroundColor: COLORS.inputBg, borderColor: COLORS.glassBorder }]} onPress={() => navigation.navigate('MainTabs')}>
+          <TouchableOpacity style={[styles.homeBtn, { backgroundColor: COLORS.inputBg, borderColor: COLORS.glassBorder }, VERTICAL_SWIPE_STYLE]} onPress={() => navigation.navigate('MainTabs')}>
             <Text style={[styles.homeBtnText, { color: COLORS.textMuted }]}>Go Home</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={styles.downloadBtnWrapper}
+          style={[styles.downloadBtnWrapper, VERTICAL_SWIPE_STYLE]}
           onPress={handleDownloadPdf}
           disabled={downloading}
         >
@@ -257,7 +258,7 @@ export default function ReportScreen({ route, navigation }) {
         >
           <Text style={[styles.proNudgeTitle, { color: COLORS.text }]}>Get PDF Report</Text>
           <Text style={[styles.proNudgeSubtitle, { color: COLORS.textMuted }]}>Download & share your performance report</Text>
-          <TouchableOpacity style={styles.proBtnWrapper}>
+          <TouchableOpacity style={[styles.proBtnWrapper, VERTICAL_SWIPE_STYLE]}>
             <LinearGradient colors={['#6366F1', '#818CF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.proBtn}>
               <Text style={styles.proBtnText}>Upgrade to Pro — ₹299/month</Text>
             </LinearGradient>

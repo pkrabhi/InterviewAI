@@ -13,6 +13,7 @@ import GlassCard from '../../components/GlassCard';
 import { getSessions } from '../../services/interviewService';
 import { getReport } from '../../services/reportService';
 import { downloadReportPdf } from '../../utils/pdfReport';
+import { VERTICAL_SWIPE_STYLE } from '../../utils/webTouch';
 
 const ScoreBadge = ({ score, COLORS }) => {
   if (!score) return null;
@@ -117,6 +118,7 @@ export default function HistoryScreen({ navigation }) {
                   }
                 }}
                 activeOpacity={0.8}
+                style={VERTICAL_SWIPE_STYLE}
               >
                 <GlassCard style={styles.card} intensity={18}>
                   <View style={{ flex: 1, gap: SPACING.xs }}>

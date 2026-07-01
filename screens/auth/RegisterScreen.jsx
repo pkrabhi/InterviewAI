@@ -10,6 +10,7 @@ import ScreenBackground from '../../components/ScreenBackground';
 import GlassCard from '../../components/GlassCard';
 import useAuthStore from '../../store/useAuthStore';
 import { emailRegister } from '../../services/authService';
+import { VERTICAL_SWIPE_STYLE } from '../../utils/webTouch';
 
 const GlassInput = ({ icon, label, rightIcon, onRightIcon, ...props }) => (
   <View style={inputStyles.group}>
@@ -131,7 +132,7 @@ export default function RegisterScreen({ navigation }) {
             />
           </View>
 
-          <TouchableOpacity onPress={handleRegister} disabled={loading} style={styles.btnWrapper}>
+          <TouchableOpacity onPress={handleRegister} disabled={loading} style={[styles.btnWrapper, VERTICAL_SWIPE_STYLE]}>
             <LinearGradient
               colors={loading ? ['#4B4F8A', '#4B4F8A'] : ['#6366F1', '#818CF8']}
               start={{ x: 0, y: 0 }}
@@ -145,7 +146,7 @@ export default function RegisterScreen({ navigation }) {
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.loginLink}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.loginLink, VERTICAL_SWIPE_STYLE]}>
             <Text style={styles.loginLinkText}>
               Already have an account?{'  '}
               <Text style={styles.loginLinkBold}>Sign In</Text>

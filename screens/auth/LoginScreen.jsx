@@ -13,6 +13,7 @@ import ScreenBackground from '../../components/ScreenBackground';
 import GlassCard from '../../components/GlassCard';
 import useAuthStore from '../../store/useAuthStore';
 import { googleLogin, emailLogin } from '../../services/authService';
+import { VERTICAL_SWIPE_STYLE } from '../../utils/webTouch';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -121,7 +122,7 @@ export default function LoginScreen({ navigation }) {
           <TouchableOpacity
             onPress={handleEmailLogin}
             disabled={loading}
-            style={styles.signInBtnWrapper}
+            style={[styles.signInBtnWrapper, VERTICAL_SWIPE_STYLE]}
           >
             <LinearGradient
               colors={loading ? ['#4B4F8A', '#4B4F8A'] : ['#6366F1', '#818CF8']}
@@ -136,7 +137,7 @@ export default function LoginScreen({ navigation }) {
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.registerLink}>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')} style={[styles.registerLink, VERTICAL_SWIPE_STYLE]}>
             <Text style={[styles.registerLinkText, { color: COLORS.textMuted }]}>
               New here?{'  '}
               <Text style={{ color: COLORS.primaryLight, fontWeight: '600' }}>Create an account</Text>
@@ -152,7 +153,7 @@ export default function LoginScreen({ navigation }) {
 
           {/* Google */}
           <TouchableOpacity
-            style={[styles.googleBtn, { backgroundColor: COLORS.inputBg, borderColor: COLORS.inputBorder }, (!request || loading) && { opacity: 0.5 }]}
+            style={[styles.googleBtn, { backgroundColor: COLORS.inputBg, borderColor: COLORS.inputBorder }, (!request || loading) && { opacity: 0.5 }, VERTICAL_SWIPE_STYLE]}
             onPress={handleGoogleLogin}
             disabled={!request || loading}
           >

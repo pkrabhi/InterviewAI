@@ -12,6 +12,7 @@ import { ROLES, LEVELS, INTERVIEW_TYPES, LENGTHS } from '../../constants/roles';
 import GlassCard from '../../components/GlassCard';
 import ScreenBackground from '../../components/ScreenBackground';
 import api from '../../services/api';
+import { VERTICAL_SWIPE_STYLE } from '../../utils/webTouch';
 
 function StepBar({ current, total, COLORS, styles }) {
   return (
@@ -146,7 +147,7 @@ export default function SetupScreen({ navigation, route }) {
                     key={item.id}
                     onPress={() => setSelectedRole(item)}
                     activeOpacity={0.8}
-                    style={{ flex: 1 }}
+                    style={[{ flex: 1 }, VERTICAL_SWIPE_STYLE]}
                   >
                     <GlassCard
                       style={[styles.roleCard, active && { borderColor: COLORS.primary, borderWidth: 2 }]}

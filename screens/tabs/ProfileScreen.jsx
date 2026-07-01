@@ -12,6 +12,7 @@ import GlassCard from '../../components/GlassCard';
 import useAuthStore from '../../store/useAuthStore';
 import { logout }   from '../../services/authService';
 import { createPaymentOrder } from '../../services/paymentService';
+import { VERTICAL_SWIPE_STYLE } from '../../utils/webTouch';
 
 const showAlert = (title, msg) => {
   if (Platform.OS === 'web') window.alert(`${title}\n\n${msg}`);
@@ -26,7 +27,7 @@ export default function ProfileScreen() {
   const styles = useMemo(() => makeStyles(COLORS), [COLORS]);
 
   const MenuItem = ({ icon, label, onPress, danger, subtitle, right }) => (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.menuItem, VERTICAL_SWIPE_STYLE]} onPress={onPress} activeOpacity={0.7}>
       <View style={[styles.menuIconWrap, danger && { backgroundColor: COLORS.danger + '22' }]}>
         <MaterialCommunityIcons name={icon} size={18} color={danger ? COLORS.danger : COLORS.textMuted} />
       </View>
@@ -88,7 +89,7 @@ export default function ProfileScreen() {
               <Text style={[styles.menuLabel, { fontWeight: '700' }]}>Upgrade to Pro</Text>
               <Text style={styles.menuSub}>Unlimited interviews, PDF reports & history</Text>
             </View>
-            <TouchableOpacity onPress={handleUpgrade} disabled={upgrading} style={{ borderRadius: RADIUS.md, overflow: 'hidden' }}>
+            <TouchableOpacity onPress={handleUpgrade} disabled={upgrading} style={[{ borderRadius: RADIUS.md, overflow: 'hidden' }, VERTICAL_SWIPE_STYLE]}>
               <LinearGradient colors={['#6366F1', '#818CF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.upgradeBtn}>
                 {upgrading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.upgradeBtnText}>₹299/mo</Text>}
               </LinearGradient>
