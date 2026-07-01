@@ -26,6 +26,12 @@ export default function AppNavigator() {
         headerTitleStyle: { fontWeight: '600' },
         cardStyle:        { backgroundColor: COLORS.bg, flex: 1, ...(Platform.OS === 'web' ? { height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' } : {}) },
         animationEnabled: Platform.OS !== 'web',
+        // headerMode defaults to 'screen' on web, which flips react-navigation-stack's
+        // internal pageOverflowEnabled to true — that swaps the card container's style
+        // from { flex:1, overflow:'hidden' } to { minHeight:'100%' } (no flex at all),
+        // so nested ScrollViews never get bounded and their overflow becomes unreachable.
+        // Forcing 'float' here keeps the flex/overflow-hidden card mode always active.
+        headerMode: 'float',
       }}
     >
       <Stack.Screen

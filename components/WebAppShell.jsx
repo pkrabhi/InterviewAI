@@ -22,6 +22,12 @@ function injectWebRootStyles() {
     html { height: 100%; height: 100dvh; margin: 0; padding: 0; }
     body { height: 100%; height: 100dvh; margin: 0; padding: 0; overflow: hidden; overscroll-behavior: none; }
     #root { height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+    /* Flex items default to min-height:auto (won't shrink below content), so a nested
+       ScrollView never gets clipped to the viewport — it just grows to fit its content
+       and the overflow is silently cut off by an ancestor's overflow:hidden with nothing
+       scrollable in between. Force min-height:0 through the whole chain so ScrollViews
+       actually bound to available space and become scrollable. */
+    #root * { min-height: 0; }
     /* Smooth touch scroll on all scrollable divs */
     * { -webkit-overflow-scrolling: touch; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
     /* Allow scroll inside scrollable containers */
@@ -47,8 +53,10 @@ export default function WebAppShell({ children, bgColor = '#080B14' }) {
 
   if (!isDesktop) {
     // Mobile browser — full screen, no frame
+    // flex:1 (not height:'100%') — a plain RN View defaults to flexShrink:0 and sizes to
+    // its content inside a flex-column ancestor, so height:100% alone doesn't bound it.
     return (
-      <View style={{ width: '100%', height: '100%', backgroundColor: bgColor }}>
+      <View style={{ flex: 1, minHeight: 0, width: '100%', backgroundColor: bgColor }}>
         {children}
       </View>
     );

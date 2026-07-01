@@ -49,7 +49,7 @@ export default function App() {
         {isLoggedIn ? (
           <AppNavigator />
         ) : (
-          <AuthStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: COLORS.bg } }}>
+          <AuthStack.Navigator screenOptions={{ headerShown: false, headerMode: 'float', cardStyle: { backgroundColor: COLORS.bg } }}>
             <AuthStack.Screen name="Login" component={LoginScreen} />
             <AuthStack.Screen name="Register" component={RegisterScreen} />
           </AuthStack.Navigator>
