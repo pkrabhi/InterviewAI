@@ -408,7 +408,13 @@ export default function SessionScreen({ route, navigation }) {
             ref={flatListRef}
             data={messages}
             keyExtractor={(_, index) => index.toString()}
-            renderItem={({ item }) => <MessageBubble role={item.role} content={item.content} />}
+            renderItem={({ item, index }) => (
+              <MessageBubble
+                role={item.role}
+                content={item.content}
+                animate={index === messages.length - 1 && item.role === 'interviewer'}
+              />
+            )}
             ListFooterComponent={isTyping ? <TypingIndicator /> : null}
             contentContainerStyle={{ paddingVertical: SPACING.md, paddingBottom: SPACING.xl }}
             showsVerticalScrollIndicator={false}
@@ -456,7 +462,7 @@ export default function SessionScreen({ route, navigation }) {
             intensity={32}
             borderColor={COLORS.glassBorder}
           >
-            <HintPanel hint="Think about a real example from your work experience." />
+            <HintPanel question={[...messages].reverse().find((m) => m.role === 'interviewer')?.content} />
 
             {isListening && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, paddingHorizontal: SPACING.md, paddingBottom: SPACING.xs }}>

@@ -1,13 +1,35 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SPACING, RADIUS, FONT_SIZE } from '../constants/theme';
 import useThemeStore from '../store/useThemeStore';
 import GlassCard from './GlassCard';
 
-export default function MessageBubble({ role, content }) {
+export default function MessageBubble({ role, content, animate = false }) {
   const { COLORS } = useThemeStore();
   const isInterviewer = role === 'interviewer';
   const styles = useMemo(() => makeStyles(COLORS), [COLORS]);
+
+  const [displayed, setDisplayed] = useState(animate ? '' : content);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    // When content changes and animate=false, show immediately
+    if (!animate || !isInterviewer) {
+      setDisplayed(content);
+      return;
+    }
+    // Word-by-word reveal for interviewer messages
+    const words = content.split(' ');
+    let i = 0;
+    setDisplayed('');
+    clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      i++;
+      setDisplayed(words.slice(0, i).join(' '));
+      if (i >= words.length) clearInterval(intervalRef.current);
+    }, 55);
+    return () => clearInterval(intervalRef.current);
+  }, [content, animate]);
 
   return (
     <View style={[styles.row, isInterviewer ? styles.rowLeft : styles.rowRight]}>
@@ -18,7 +40,10 @@ export default function MessageBubble({ role, content }) {
       )}
       {isInterviewer ? (
         <GlassCard style={styles.bubbleLeft} intensity={28}>
-          <Text style={[styles.content, { color: COLORS.text }]}>{content}</Text>
+          <Text style={[styles.content, { color: COLORS.text }]}>{displayed}</Text>
+          {animate && displayed.length < content.length && (
+            <Text style={{ color: COLORS.primary, fontSize: 16, marginTop: 2 }}>▌</Text>
+          )}
         </GlassCard>
       ) : (
         <View style={styles.bubbleRight}>

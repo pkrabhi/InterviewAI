@@ -1,32 +1,66 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, ActivityIndicator,
+  TouchableOpacity, ActivityIndicator, Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS } from '../../constants/theme';
+import { SPACING, RADIUS } from '../../constants/theme';
+import useThemeStore from '../../store/useThemeStore';
 import ScreenBackground from '../../components/ScreenBackground';
 import GlassCard from '../../components/GlassCard';
 import ScoreGauge from '../../components/ScoreGauge';
 import { getReport } from '../../services/reportService';
 
-const ScoreBar = ({ label, score }) => {
+// Animated score bar
+function ScoreBar({ label, score, COLORS }) {
+  const widthAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(widthAnim, {
+      toValue: score,
+      duration: 900,
+      delay: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [score]);
+
   const color = score >= 75 ? COLORS.success : score >= 50 ? COLORS.accent : COLORS.danger;
+  const widthPct = widthAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+
   return (
     <View style={styles.barRow}>
-      <Text style={styles.barLabel}>{label}</Text>
-      <View style={styles.barBg}>
-        <View style={[styles.barFill, { width: `${score}%`, backgroundColor: color }]} />
+      <Text style={[styles.barLabel, { color: COLORS.textMuted }]}>{label}</Text>
+      <View style={[styles.barBg, { backgroundColor: COLORS.border }]}>
+        <Animated.View style={[styles.barFill, { width: widthPct, backgroundColor: color }]} />
       </View>
       <Text style={[styles.barScore, { color }]}>{score}</Text>
     </View>
   );
-};
+}
+
+// Animated overall score counter
+function AnimatedScore({ score, COLORS }) {
+  const [displayed, setDisplayed] = useState(0);
+  useEffect(() => {
+    let current = 0;
+    const step = Math.ceil(score / 40);
+    const interval = setInterval(() => {
+      current = Math.min(current + step, score);
+      setDisplayed(current);
+      if (current >= score) clearInterval(interval);
+    }, 30);
+    return () => clearInterval(interval);
+  }, [score]);
+
+  const color = score >= 75 ? COLORS.success : score >= 50 ? COLORS.accent : COLORS.danger;
+  return (
+    <Text style={[styles.bigScore, { color }]}>{displayed}</Text>
+  );
+}
 
 const TagList = ({ items, color, bgColor }) => {
   if (!items || items.length === 0) return (
-    <Text style={{ color: COLORS.textMuted, fontSize: 13 }}>None recorded</Text>
+    <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>None recorded</Text>
   );
   return items.map((item, i) => (
     <View key={i} style={[styles.tag, { backgroundColor: bgColor }]}>
@@ -45,10 +79,11 @@ const parseJsonField = (value) => {
 
 export default function ReportScreen({ route, navigation }) {
   const { sessionId } = route.params || {};
+  const { COLORS } = useThemeStore();
   const [report, setReport]   = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(false);
-  const retriesRef = useRef(0); // useRef avoids stale closure
+  const retriesRef = useRef(0);
   const isMounted  = useRef(true);
 
   useEffect(() => {
@@ -72,7 +107,6 @@ export default function ReportScreen({ route, navigation }) {
       });
     } catch (e) {
       if (!isMounted.current) return;
-      // Report may still be generating — retry up to 5 times with increasing delay
       if (retriesRef.current < 5) {
         retriesRef.current += 1;
         setTimeout(fetchReport, 3000 * retriesRef.current);
@@ -89,10 +123,10 @@ export default function ReportScreen({ route, navigation }) {
       <ScreenBackground>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Generating your report...</Text>
-          <Text style={styles.loadingSubText}>AI is evaluating your performance</Text>
+          <Text style={[styles.loadingText, { color: COLORS.text }]}>Generating your report...</Text>
+          <Text style={[styles.loadingSubText, { color: COLORS.textMuted }]}>AI is evaluating your performance</Text>
           {retriesRef.current > 0 && (
-            <Text style={styles.loadingSubText}>Retry {retriesRef.current}/5...</Text>
+            <Text style={[styles.loadingSubText, { color: COLORS.textMuted }]}>Retry {retriesRef.current}/5...</Text>
           )}
         </View>
       </ScreenBackground>
@@ -104,8 +138,8 @@ export default function ReportScreen({ route, navigation }) {
       <ScreenBackground>
         <View style={styles.loadingContainer}>
           <MaterialCommunityIcons name="alert-circle-outline" size={48} color={COLORS.danger} />
-          <Text style={styles.loadingText}>Report not ready yet</Text>
-          <Text style={styles.loadingSubText}>The AI may still be processing</Text>
+          <Text style={[styles.loadingText, { color: COLORS.text }]}>Report not ready yet</Text>
+          <Text style={[styles.loadingSubText, { color: COLORS.textMuted }]}>The AI may still be processing</Text>
           <TouchableOpacity style={styles.retryBtnWrapper} onPress={() => { retriesRef.current = 0; fetchReport(); }}>
             <LinearGradient colors={['#6366F1', '#818CF8']} style={styles.retryBtn}>
               <Text style={styles.retryBtnText}>Try Again</Text>
@@ -119,22 +153,25 @@ export default function ReportScreen({ route, navigation }) {
   return (
     <ScreenBackground>
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Animated score section */}
         <View style={styles.scoreSection}>
           <ScoreGauge score={report.overallScore} size={160} label="Overall Score" />
+          <AnimatedScore score={report.overallScore} COLORS={COLORS} />
+          <Text style={[styles.scoreLabel, { color: COLORS.textMuted }]}>out of 100</Text>
         </View>
 
         <GlassCard style={styles.card} intensity={20}>
-          <Text style={styles.sectionTitle}>Performance Breakdown</Text>
-          <ScoreBar label="Technical"        score={report.technicalScore} />
-          <ScoreBar label="Communication"    score={report.communicationScore} />
-          <ScoreBar label="Problem Solving"  score={report.problemSolvingScore} />
-          <ScoreBar label="Best Practices"   score={report.bestPracticesScore} />
+          <Text style={[styles.sectionTitle, { color: COLORS.text }]}>Performance Breakdown</Text>
+          <ScoreBar label="Technical"       score={report.technicalScore}       COLORS={COLORS} />
+          <ScoreBar label="Communication"   score={report.communicationScore}   COLORS={COLORS} />
+          <ScoreBar label="Problem Solving" score={report.problemSolvingScore}  COLORS={COLORS} />
+          <ScoreBar label="Best Practices"  score={report.bestPracticesScore}   COLORS={COLORS} />
         </GlassCard>
 
         <GlassCard style={styles.card} intensity={20}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="thumb-up" size={18} color={COLORS.success} />
-            <Text style={styles.sectionTitle}>Strengths</Text>
+            <Text style={[styles.sectionTitle, { color: COLORS.text }]}>Strengths</Text>
           </View>
           <View style={styles.tagContainer}>
             <TagList items={report.strengths} color={COLORS.success} bgColor={COLORS.success + '22'} />
@@ -144,7 +181,7 @@ export default function ReportScreen({ route, navigation }) {
         <GlassCard style={styles.card} intensity={20}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="trending-up" size={18} color={COLORS.accent} />
-            <Text style={styles.sectionTitle}>Areas to Improve</Text>
+            <Text style={[styles.sectionTitle, { color: COLORS.text }]}>Areas to Improve</Text>
           </View>
           <View style={styles.tagContainer}>
             <TagList items={report.improvements} color={COLORS.accent} bgColor={COLORS.accent + '22'} />
@@ -154,7 +191,7 @@ export default function ReportScreen({ route, navigation }) {
         <GlassCard style={styles.card} intensity={20}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="book-open-variant" size={18} color={COLORS.primaryLight} />
-            <Text style={styles.sectionTitle}>Study These Next</Text>
+            <Text style={[styles.sectionTitle, { color: COLORS.text }]}>Study These Next</Text>
           </View>
           <View style={styles.tagContainer}>
             <TagList items={report.nextTopics} color={COLORS.primaryLight} bgColor={COLORS.primary + '22'} />
@@ -171,8 +208,8 @@ export default function ReportScreen({ route, navigation }) {
               <Text style={styles.tryAgainText}>Try Again</Text>
             </LinearGradient>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.homeBtn} onPress={() => navigation.navigate('MainTabs')}>
-            <Text style={styles.homeBtnText}>Go Home</Text>
+          <TouchableOpacity style={[styles.homeBtn, { backgroundColor: COLORS.inputBg, borderColor: COLORS.glassBorder }]} onPress={() => navigation.navigate('MainTabs')}>
+            <Text style={[styles.homeBtnText, { color: COLORS.textMuted }]}>Go Home</Text>
           </TouchableOpacity>
         </View>
 
@@ -182,8 +219,8 @@ export default function ReportScreen({ route, navigation }) {
           borderColor="rgba(99,102,241,0.3)"
           intensity={18}
         >
-          <Text style={styles.proNudgeTitle}>Get PDF Report</Text>
-          <Text style={styles.proNudgeSubtitle}>Download & share your performance report</Text>
+          <Text style={[styles.proNudgeTitle, { color: COLORS.text }]}>Get PDF Report</Text>
+          <Text style={[styles.proNudgeSubtitle, { color: COLORS.textMuted }]}>Download & share your performance report</Text>
           <TouchableOpacity style={styles.proBtnWrapper}>
             <LinearGradient colors={['#6366F1', '#818CF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.proBtn}>
               <Text style={styles.proBtnText}>Upgrade to Pro — ₹299/month</Text>
@@ -198,25 +235,21 @@ export default function ReportScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center', justifyContent: 'center', gap: SPACING.md,
-  },
-  loadingText: { color: COLORS.text, fontSize: 18, fontWeight: '600' },
-  loadingSubText: { color: COLORS.textMuted, fontSize: 14 },
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.md },
+  loadingText: { fontSize: 18, fontWeight: '600' },
+  loadingSubText: { fontSize: 14 },
   retryBtnWrapper: { marginTop: SPACING.md, borderRadius: RADIUS.md, overflow: 'hidden' },
   retryBtn: { paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md, borderRadius: RADIUS.md },
   retryBtnText: { color: '#fff', fontWeight: '600' },
-  scoreSection: { alignItems: 'center', paddingVertical: SPACING.xl },
-  card: {
-    padding: SPACING.lg,
-    marginHorizontal: SPACING.md, marginBottom: SPACING.md,
-  },
+  scoreSection: { alignItems: 'center', paddingVertical: SPACING.xl, gap: SPACING.xs },
+  bigScore: { fontSize: 56, fontWeight: '800', letterSpacing: -2 },
+  scoreLabel: { fontSize: 13 },
+  card: { padding: SPACING.lg, marginHorizontal: SPACING.md, marginBottom: SPACING.md },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.md },
-  sectionTitle: { color: COLORS.text, fontSize: 16, fontWeight: '600', marginBottom: SPACING.md },
+  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: SPACING.md },
   barRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm, gap: SPACING.sm },
-  barLabel: { color: COLORS.textMuted, fontSize: 13, width: 110 },
-  barBg: { flex: 1, height: 8, backgroundColor: COLORS.border, borderRadius: RADIUS.full, overflow: 'hidden' },
+  barLabel: { fontSize: 13, width: 110 },
+  barBg: { flex: 1, height: 8, borderRadius: RADIUS.full, overflow: 'hidden' },
   barFill: { height: 8, borderRadius: RADIUS.full },
   barScore: { fontSize: 13, fontWeight: '600', width: 30, textAlign: 'right' },
   tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
@@ -224,23 +257,13 @@ const styles = StyleSheet.create({
   tagText: { fontSize: 13, fontWeight: '500' },
   actions: { flexDirection: 'row', gap: SPACING.sm, marginHorizontal: SPACING.md, marginBottom: SPACING.md },
   tryAgainBtnWrapper: { flex: 1, borderRadius: RADIUS.md, overflow: 'hidden' },
-  tryAgainBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md,
-  },
+  tryAgainBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md },
   tryAgainText: { color: '#fff', fontWeight: '700' },
-  homeBtn: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)',
-    padding: SPACING.md, borderRadius: RADIUS.md,
-  },
-  homeBtnText: { color: 'rgba(255,255,255,0.45)', fontWeight: '600' },
-  proNudge: {
-    padding: SPACING.lg, marginHorizontal: SPACING.md, marginBottom: SPACING.md,
-    alignItems: 'center', gap: SPACING.sm,
-  },
-  proNudgeTitle: { color: COLORS.text, fontSize: 16, fontWeight: '700' },
-  proNudgeSubtitle: { color: 'rgba(255,255,255,0.4)', fontSize: 13 },
+  homeBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, padding: SPACING.md, borderRadius: RADIUS.md },
+  homeBtnText: { fontWeight: '600' },
+  proNudge: { padding: SPACING.lg, marginHorizontal: SPACING.md, marginBottom: SPACING.md, alignItems: 'center', gap: SPACING.sm },
+  proNudgeTitle: { fontSize: 16, fontWeight: '700' },
+  proNudgeSubtitle: { fontSize: 13 },
   proBtnWrapper: { borderRadius: RADIUS.full, overflow: 'hidden', marginTop: SPACING.sm },
   proBtn: { paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md, borderRadius: RADIUS.full },
   proBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
