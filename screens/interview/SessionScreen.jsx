@@ -60,7 +60,8 @@ const stopSpeaking = () => {
 
 // ── Main component ────────────────────────────────────────────────────
 export default function SessionScreen({ route, navigation }) {
-  const { role, level, type, jdText, resumeSummary, resumeSessionId } = route.params || {};
+  const { role, level, type, length, jdText, resumeSummary, resumeSessionId } = route.params || {};
+  const totalQuestions = length?.questions || 8;
   const { width } = useWindowDimensions();
   const { COLORS, isDark } = useThemeStore();
 
@@ -191,6 +192,7 @@ export default function SessionScreen({ route, navigation }) {
           interviewType: type?.id || 'technical',
           jdText:        jdText || '',
           resumeSummary: resumeSummary || '',
+          questionCount: totalQuestions,
         });
         setSessionId(response.sessionId);
         addMessage({ role: 'interviewer', content: response.openingMessage });
@@ -333,7 +335,7 @@ export default function SessionScreen({ route, navigation }) {
   };
 
   const candidateAnswers = messages.filter((m) => m.role === 'candidate').length;
-  const progress = Math.min(candidateAnswers / 7, 1);
+  const progress = Math.min(candidateAnswers / totalQuestions, 1);
 
   const isWeb = Platform.OS === 'web';
 
@@ -399,7 +401,7 @@ export default function SessionScreen({ route, navigation }) {
           <View style={{ height: 2, backgroundColor: COLORS.primary, width: `${progress * 100}%` }} />
         </View>
         <Text style={{ color: COLORS.textMuted, fontSize: FONT_SIZE.xs, textAlign: 'center', paddingVertical: SPACING.xs }}>
-          {candidateAnswers}/7 questions answered
+          {candidateAnswers}/{totalQuestions} questions answered
         </Text>
 
         {/* Chat messages */}

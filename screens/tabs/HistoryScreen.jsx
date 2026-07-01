@@ -112,6 +112,7 @@ export default function HistoryScreen({ navigation }) {
                       role: { id: item.role, label: item.role },
                       level: item.level,
                       type: { id: item.interviewType, label: item.interviewType },
+                      length: { questions: item.questionCount || 8 },
                     });
                   }
                 }}

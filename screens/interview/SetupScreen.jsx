@@ -8,7 +8,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { SPACING, RADIUS, FONT_SIZE } from '../../constants/theme';
 import useThemeStore from '../../store/useThemeStore';
-import { ROLES, LEVELS, INTERVIEW_TYPES } from '../../constants/roles';
+import { ROLES, LEVELS, INTERVIEW_TYPES, LENGTHS } from '../../constants/roles';
 import GlassCard from '../../components/GlassCard';
 import ScreenBackground from '../../components/ScreenBackground';
 import api from '../../services/api';
@@ -35,8 +35,9 @@ export default function SetupScreen({ navigation, route }) {
 
   const [step, setStep]                   = useState(preselectedRole ? 2 : 1);
   const [selectedRole, setSelectedRole]   = useState(preselectedRole);
-  const [selectedLevel, setSelectedLevel] = useState(null);
-  const [selectedType, setSelectedType]   = useState(null);
+  const [selectedLevel, setSelectedLevel]   = useState(null);
+  const [selectedType, setSelectedType]     = useState(null);
+  const [selectedLength, setSelectedLength] = useState(LENGTHS[1]); // default: Standard
   const [jdText, setJdText]               = useState('');
   const [resumeFile, setResumeFile]       = useState(null);
   const [resumeSummary, setResumeSummary] = useState('');
@@ -80,6 +81,7 @@ export default function SetupScreen({ navigation, route }) {
       role: selectedRole,
       level: selectedLevel,
       type: selectedType,
+      length: selectedLength,
       jdText: jdText.trim(),
       resumeSummary: resumeSummary.trim(),
     });
@@ -199,6 +201,27 @@ export default function SetupScreen({ navigation, route }) {
                   borderColor={active ? COLORS.primary : undefined}
                 >
                   <Text style={[styles.levelText, active && { color: COLORS.primaryLight, fontWeight: '700' }]}>{level}</Text>
+                </GlassCard>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Length row */}
+        <Text style={styles.sectionLabel}>Interview length</Text>
+        <View style={{ flexDirection: 'row', gap: SPACING.xs, marginBottom: SPACING.md }}>
+          {LENGTHS.map((length) => {
+            const active = selectedLength?.id === length.id;
+            return (
+              <TouchableOpacity key={length.id} onPress={() => setSelectedLength(length)} style={{ flex: 1 }} activeOpacity={0.8}>
+                <GlassCard
+                  style={[styles.levelCard, active && { borderColor: COLORS.primary, borderWidth: 2 }]}
+                  intensity={active ? 40 : 22}
+                  tint={active ? COLORS.primary + '20' : undefined}
+                  borderColor={active ? COLORS.primary : undefined}
+                >
+                  <Text style={[styles.levelText, active && { color: COLORS.primaryLight, fontWeight: '700' }]}>{length.label}</Text>
+                  <Text style={[styles.lengthSub, active && { color: COLORS.primaryLight + 'CC' }]}>{length.sub}</Text>
                 </GlassCard>
               </TouchableOpacity>
             );
@@ -382,6 +405,7 @@ const makeStyles = (COLORS) => StyleSheet.create({
   // Level cards
   levelCard: { padding: SPACING.sm, alignItems: 'center', justifyContent: 'center' },
   levelText: { color: COLORS.textMuted, fontWeight: '600', fontSize: FONT_SIZE.sm },
+  lengthSub: { color: COLORS.textMuted, fontSize: 10, marginTop: 2 },
 
   // Type cards
   typeCard:  { flex: 1, padding: SPACING.sm, alignItems: 'center', justifyContent: 'center', gap: 4 },

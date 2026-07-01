@@ -145,6 +145,7 @@ export default function HomeScreen({ navigation }) {
                       role: { id: session.role, label: session.role },
                       level: session.level,
                       type: { id: session.interviewType, label: session.interviewType },
+                      length: { questions: session.questionCount || 8 },
                     });
                   }
                 }}

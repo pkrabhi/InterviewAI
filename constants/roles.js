@@ -45,3 +45,9 @@ export const INTERVIEW_TYPES = [
   { id: 'system_design', label: 'System Design',   emoji: '🏗️' },
   { id: 'mixed',         label: 'Mixed',            emoji: '🎯' },
 ];
+
+export const LENGTHS = [
+  { id: 'quick',    label: 'Quick',    sub: '~5 Qs',  questions: 5 },
+  { id: 'standard', label: 'Standard', sub: '~8 Qs',  questions: 8 },
+  { id: 'full',     label: 'Full',     sub: '~12 Qs', questions: 12 },
+];
