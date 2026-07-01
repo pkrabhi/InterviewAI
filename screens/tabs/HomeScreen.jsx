@@ -13,6 +13,7 @@ import useAuthStore from '../../store/useAuthStore';
 import { getSessions } from '../../services/interviewService';
 import { ROLES } from '../../constants/roles';
 import { VERTICAL_SWIPE_STYLE } from '../../utils/webTouch';
+import { unlockSpeechSynthesis } from '../../utils/webSpeechUnlock';
 
 const getGreeting = () => {
   const h = new Date().getHours();
@@ -141,6 +142,7 @@ export default function HomeScreen({ navigation }) {
                   if (session.status === 'COMPLETED') {
                     navigation.navigate('InterviewReport', { sessionId: session.id, role: session.role, level: session.level });
                   } else {
+                    unlockSpeechSynthesis();
                     navigation.navigate('InterviewSession', {
                       resumeSessionId: session.id,
                       role: { id: session.role, label: session.role },

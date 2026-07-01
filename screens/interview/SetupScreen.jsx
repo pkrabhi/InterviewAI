@@ -13,6 +13,7 @@ import GlassCard from '../../components/GlassCard';
 import ScreenBackground from '../../components/ScreenBackground';
 import api from '../../services/api';
 import { VERTICAL_SWIPE_STYLE } from '../../utils/webTouch';
+import { unlockSpeechSynthesis } from '../../utils/webSpeechUnlock';
 
 function StepBar({ current, total, COLORS, styles }) {
   return (
@@ -106,6 +107,7 @@ export default function SetupScreen({ navigation, route }) {
   };
 
   const handleStart = () => {
+    unlockSpeechSynthesis(); // must be called synchronously from the tap, not after the async navigate
     navigation.navigate('InterviewSession', {
       role: selectedRole,
       level: selectedLevel,

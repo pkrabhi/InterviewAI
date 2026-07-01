@@ -14,6 +14,7 @@ import { getSessions } from '../../services/interviewService';
 import { getReport } from '../../services/reportService';
 import { downloadReportPdf } from '../../utils/pdfReport';
 import { VERTICAL_SWIPE_STYLE } from '../../utils/webTouch';
+import { unlockSpeechSynthesis } from '../../utils/webSpeechUnlock';
 
 const ScoreBadge = ({ score, COLORS }) => {
   if (!score) return null;
@@ -108,6 +109,7 @@ export default function HistoryScreen({ navigation }) {
                   if (item.status === 'COMPLETED') {
                     navigation.navigate('InterviewReport', { sessionId: item.id, role: item.role, level: item.level });
                   } else {
+                    unlockSpeechSynthesis();
                     navigation.navigate('InterviewSession', {
                       resumeSessionId: item.id,
                       role: { id: item.role, label: item.role },

@@ -77,7 +77,6 @@ export default function SessionScreen({ route, navigation }) {
   const recognitionRef = useRef(null);
   const isMounted      = useRef(true);
   const pulseAnim      = useRef(new Animated.Value(1)).current;
-  const hasSpokenFirst = useRef(false); // skip TTS on opening message
   const voiceModalRef  = useRef(false); // track modal open state without closure staleness
   const isListeningRef = useRef(false); // track listening without stale closure
 
@@ -127,7 +126,6 @@ export default function SessionScreen({ route, navigation }) {
   useEffect(() => {
     isMounted.current = true;
     stopSpeaking();
-    hasSpokenFirst.current = false;
     resetSession();
     initSession();
     const interval = setInterval(() => setTimer((t) => t + 1), 1000);
@@ -152,15 +150,11 @@ export default function SessionScreen({ route, navigation }) {
   useEffect(() => { voiceModalRef.current = voiceModalVisible; }, [voiceModalVisible]);
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
 
-  // Speak Aryan's messages — skip the opening message, speak from 2nd onward
+  // Speak every one of Aryan's messages, including the opening greeting/question.
   useEffect(() => {
     if (!voiceEnabledRef.current) return;
     const last = messages[messages.length - 1];
     if (last && last.role === 'interviewer') {
-      if (!hasSpokenFirst.current) {
-        hasSpokenFirst.current = true; // mark opening message seen, don't speak it
-        return;
-      }
       setIsSpeaking(true);
       speakText(last.content, () => setIsSpeaking(false));
     }
