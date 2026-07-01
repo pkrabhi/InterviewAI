@@ -30,8 +30,14 @@ function injectWebRootStyles() {
     #root * { min-height: 0; }
     /* Smooth touch scroll on all scrollable divs */
     * { -webkit-overflow-scrolling: touch; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-    /* Allow scroll inside scrollable containers */
-    [data-focusable="true"], div[style*="overflow"] { overscroll-behavior: contain; }
+    /* NOTE: previously had "div[style*='overflow'] { overscroll-behavior: contain }" here.
+       That selector matched every GlassCard too (they set overflow:'hidden' inline for the
+       rounded-corner clip), not just real scroll containers. Since most cards have nothing
+       to scroll internally, the browser found 0 scrollable delta on the card and — because
+       of overscroll-behavior:contain — refused to chain the gesture up to the real
+       scrollable ancestor. That's why sliding with a finger starting on a card did nothing,
+       while sliding in the gap between cards scrolled fine. Removed; the outer
+       overscroll-behavior:none on body already prevents page-level bounce/pull-to-refresh. */
     /* Prevent iOS bounce on outer */
     body { touch-action: pan-y; }
   `;
