@@ -12,6 +12,7 @@
     },
     "android": {
       "package": "com.abhipkr.interviewai",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "RECORD_AUDIO",
         "INTERNET",
