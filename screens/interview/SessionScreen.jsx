@@ -58,6 +58,10 @@ const stopSpeaking = () => {
   }
 };
 
+// ── Voice Mode (hands-free) tuning ─────────────────────────────────────
+const SILENCE_MS = 1800; // no new speech result for this long → assume the candidate is done talking
+const GRACE_MS    = 2000; // "Sending in Ns..." window before auto-submitting, cancellable by more speech
+
 // ── Main component ────────────────────────────────────────────────────
 export default function SessionScreen({ route, navigation }) {
   const { role, level, type, length, jdText, resumeSummary, resumeSessionId } = route.params || {};
@@ -73,21 +77,28 @@ export default function SessionScreen({ route, navigation }) {
   const voiceEnabledRef = useRef(true);
   const [voiceModalVisible, setVoiceModalVisible] = useState(false);
   const [voiceTranscript, setVoiceTranscript]     = useState('');
+  const [interactionMode, setInteractionMode]     = useState('text'); // 'text' | 'voice'
+  const [voiceGraceSeconds, setVoiceGraceSeconds] = useState(null);   // "Sending in Ns..." countdown, null = not in grace
   const flatListRef    = useRef(null);
   const recognitionRef = useRef(null);
   const isMounted      = useRef(true);
   const pulseAnim      = useRef(new Animated.Value(1)).current;
   const voiceModalRef  = useRef(false); // track modal open state without closure staleness
   const isListeningRef = useRef(false); // track listening without stale closure
+  const autoListenActiveRef = useRef(false); // mirrors interactionMode==='voice' without stale closures
+  const voiceTranscriptRef  = useRef('');    // mirrors voiceTranscript for use inside timers
+  const silenceTimerRef     = useRef(null);
+  const graceIntervalRef    = useRef(null);
 
   // expo-speech-recognition events
   useSpeechRecognitionEvent('result', (event) => {
     const text = event.results?.[0]?.transcript || '';
     setVoiceTranscript(text);
+    if (autoListenActiveRef.current) handleAutoSpeechResult(text);
   });
   useSpeechRecognitionEvent('end', () => {
-    // Android ASR stops after brief silence — restart if modal is still open
-    if (voiceModalRef.current && Platform.OS !== 'web' && isListeningRef.current) {
+    // Android ASR stops after brief silence — restart if modal or hands-free voice mode is still active
+    if ((voiceModalRef.current || autoListenActiveRef.current) && Platform.OS !== 'web' && isListeningRef.current) {
       try {
         ExpoSpeechRecognitionModule.start({ lang: 'en-IN', interimResults: true, continuous: true });
       } catch (_) {
@@ -149,16 +160,34 @@ export default function SessionScreen({ route, navigation }) {
   useEffect(() => { voiceEnabledRef.current = voiceEnabled; }, [voiceEnabled]);
   useEffect(() => { voiceModalRef.current = voiceModalVisible; }, [voiceModalVisible]);
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
+  useEffect(() => { voiceTranscriptRef.current = voiceTranscript; }, [voiceTranscript]);
+  useEffect(() => { autoListenActiveRef.current = interactionMode === 'voice'; }, [interactionMode]);
 
   // Speak every one of Aryan's messages, including the opening greeting/question.
+  // In Voice Mode, automatically start listening once Aryan finishes speaking — this is
+  // what makes the loop feel like a real call instead of a manual record/review/send flow.
   useEffect(() => {
     if (!voiceEnabledRef.current) return;
     const last = messages[messages.length - 1];
     if (last && last.role === 'interviewer') {
       setIsSpeaking(true);
-      speakText(last.content, () => setIsSpeaking(false));
+      speakText(last.content, () => {
+        setIsSpeaking(false);
+        if (autoListenActiveRef.current && !isComplete) startAutoListen();
+      });
     }
   }, [messages]);
+
+  // Switching into Voice Mode mid-turn (Aryan already asked, not currently speaking) should
+  // start listening immediately rather than waiting for the next message.
+  useEffect(() => {
+    if (interactionMode === 'voice' && !isSpeaking && !isTyping && !isComplete && messages.length > 0) {
+      startAutoListen();
+    } else if (interactionMode === 'text') {
+      stopAutoListen();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interactionMode]);
 
   // Stop speaking when user navigates away
   useEffect(() => {
@@ -215,6 +244,7 @@ export default function SessionScreen({ route, navigation }) {
     const text = (overrideText ?? inputText).trim();
     if (!text || isTyping || isComplete || !sessionId) return;
     stopSpeaking();
+    stopAutoListen(); // idempotent — also covers typing the fallback input while Voice Mode is listening
     if (!overrideText) setInputText('');
     addMessage({ role: 'candidate', content: text });
     setTyping(true);
@@ -279,6 +309,111 @@ export default function SessionScreen({ route, navigation }) {
     setIsListening(false);
   };
 
+  // ── Voice Mode (hands-free loop) ─────────────────────────────────
+  // Starts listening automatically (no modal, no tap) — used after Aryan finishes speaking,
+  // or immediately when the user switches into Voice Mode mid-turn.
+  const startAutoListen = async () => {
+    if (interactionMode !== 'voice' || isComplete) return;
+    clearTimeout(silenceTimerRef.current);
+    clearInterval(graceIntervalRef.current);
+    setVoiceGraceSeconds(null);
+    setVoiceTranscript('');
+    voiceTranscriptRef.current = '';
+
+    if (Platform.OS === 'web') {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return; // silently stay in text-typeable fallback if unsupported
+      const recognition = new SR();
+      recognition.lang = 'en-IN';
+      recognition.interimResults = true;
+      recognition.continuous = true;
+      recognitionRef.current = recognition;
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setVoiceTranscript(transcript);
+        handleAutoSpeechResult(transcript);
+      };
+      recognition.onend = () => {
+        // Some browsers stop recognition after a brief pause even with continuous:true —
+        // restart it as long as the hands-free loop hasn't been cancelled or completed.
+        if (autoListenActiveRef.current && isListeningRef.current) {
+          try { recognition.start(); } catch (_) { setIsListening(false); isListeningRef.current = false; }
+        } else {
+          setIsListening(false);
+        }
+      };
+      recognition.onerror = () => { setIsListening(false); isListeningRef.current = false; };
+      recognition.start();
+      setIsListening(true);
+      isListeningRef.current = true;
+      return;
+    }
+
+    const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!granted) { setInteractionMode('text'); return; }
+    try {
+      ExpoSpeechRecognitionModule.start({ lang: 'en-IN', interimResults: true, continuous: true });
+      setIsListening(true);
+      isListeningRef.current = true;
+    } catch (_) {}
+  };
+
+  const stopAutoListen = () => {
+    clearTimeout(silenceTimerRef.current);
+    clearInterval(graceIntervalRef.current);
+    setVoiceGraceSeconds(null);
+    stopVoiceRecording();
+  };
+
+  // Called on every speech-recognition result while Voice Mode is listening. Resets the
+  // silence timer each time new words come in; once speech pauses for SILENCE_MS, enters a
+  // cancellable grace countdown before auto-sending.
+  const handleAutoSpeechResult = (text) => {
+    voiceTranscriptRef.current = text;
+    clearTimeout(silenceTimerRef.current);
+    clearInterval(graceIntervalRef.current);
+    setVoiceGraceSeconds(null);
+    if (!text.trim()) return; // ignore background noise — don't start counting silence yet
+    silenceTimerRef.current = setTimeout(enterGracePhase, SILENCE_MS);
+  };
+
+  const enterGracePhase = () => {
+    if (!autoListenActiveRef.current) return;
+    const text = voiceTranscriptRef.current.trim();
+    if (!text) return; // nothing captured — keep listening quietly
+
+    let secondsLeft = Math.ceil(GRACE_MS / 1000);
+    setVoiceGraceSeconds(secondsLeft);
+    graceIntervalRef.current = setInterval(() => {
+      secondsLeft -= 1;
+      if (secondsLeft <= 0) {
+        clearInterval(graceIntervalRef.current);
+        commitAutoSend();
+      } else {
+        setVoiceGraceSeconds(secondsLeft);
+      }
+    }, 1000);
+  };
+
+  // Tap target on the "Sending in Ns..." pill — cancels the countdown and keeps listening.
+  const cancelGraceKeepTalking = () => {
+    clearInterval(graceIntervalRef.current);
+    setVoiceGraceSeconds(null);
+    clearTimeout(silenceTimerRef.current);
+    silenceTimerRef.current = setTimeout(enterGracePhase, SILENCE_MS);
+  };
+
+  const commitAutoSend = () => {
+    const text = voiceTranscriptRef.current.trim();
+    stopAutoListen();
+    setVoiceTranscript('');
+    voiceTranscriptRef.current = '';
+    if (text) handleSend(text);
+  };
+
   const handleVoiceSend = () => {
     const text = voiceTranscript.trim();
     stopVoiceRecording();
@@ -293,7 +428,24 @@ export default function SessionScreen({ route, navigation }) {
     setVoiceTranscript('');
   };
 
-  const toggleMic = () => openVoiceModal();
+  // In Text Mode, tapping the mic opens the record/review/send modal. In Voice Mode the mic
+  // is always-on/hands-free, so tapping it instead pauses/resumes the auto-listen loop.
+  const toggleMic = () => {
+    if (interactionMode === 'voice') {
+      if (isListening) stopAutoListen();
+      else startAutoListen();
+      return;
+    }
+    openVoiceModal();
+  };
+
+  const handleModeChange = (mode) => {
+    if (mode === interactionMode) return;
+    stopSpeaking();
+    stopAutoListen();
+    handleVoiceCancel();
+    setInteractionMode(mode);
+  };
 
   const toggleVoice = () => {
     if (isSpeaking) stopSpeaking();
@@ -460,10 +612,71 @@ export default function SessionScreen({ route, navigation }) {
           >
             <HintPanel question={[...messages].reverse().find((m) => m.role === 'interviewer')?.content} />
 
-            {isListening && (
+            {/* Text / Voice mode toggle */}
+            <View style={{ flexDirection: 'row', paddingHorizontal: SPACING.md, paddingBottom: SPACING.xs, gap: SPACING.xs }}>
+              {[
+                { id: 'text',  label: '💬 Text' },
+                { id: 'voice', label: '🎙️ Voice' },
+              ].map((m) => {
+                const active = interactionMode === m.id;
+                return (
+                  <TouchableOpacity
+                    key={m.id}
+                    onPress={() => handleModeChange(m.id)}
+                    style={{
+                      paddingHorizontal: SPACING.md, paddingVertical: 5, borderRadius: RADIUS.full,
+                      backgroundColor: active ? COLORS.primary + '25' : COLORS.inputBg,
+                      borderWidth: 1, borderColor: active ? COLORS.primary + '55' : COLORS.inputBorder,
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: active ? COLORS.primaryLight : COLORS.textMuted }}>
+                      {m.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {interactionMode === 'text' && isListening && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, paddingHorizontal: SPACING.md, paddingBottom: SPACING.xs }}>
                 <MaterialCommunityIcons name="microphone" size={14} color={COLORS.danger} />
                 <Text style={{ color: COLORS.danger, fontSize: 12, fontWeight: '500' }}>Listening... tap mic to stop</Text>
+              </View>
+            )}
+
+            {/* Voice Mode status strip — reflects the hands-free loop's current phase */}
+            {interactionMode === 'voice' && !isTyping && (
+              <View style={{ paddingHorizontal: SPACING.md, paddingBottom: SPACING.xs }}>
+                {isSpeaking ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs }}>
+                    <MaterialCommunityIcons name="volume-high" size={14} color={COLORS.success} />
+                    <Text style={{ color: COLORS.success, fontSize: 12, fontWeight: '500' }}>Aryan is speaking...</Text>
+                  </View>
+                ) : voiceGraceSeconds != null ? (
+                  <TouchableOpacity
+                    onPress={cancelGraceKeepTalking}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
+                      alignSelf: 'flex-start', paddingHorizontal: SPACING.sm, paddingVertical: 4,
+                      borderRadius: RADIUS.full, backgroundColor: COLORS.primary + '22',
+                      borderWidth: 1, borderColor: COLORS.primary + '55',
+                    }}
+                  >
+                    <MaterialCommunityIcons name="send-clock" size={14} color={COLORS.primaryLight} />
+                    <Text style={{ color: COLORS.primaryLight, fontSize: 12, fontWeight: '700' }}>
+                      Sending in {voiceGraceSeconds}s — tap to keep talking
+                    </Text>
+                  </TouchableOpacity>
+                ) : isListening ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs }}>
+                    <MaterialCommunityIcons name="microphone" size={14} color={COLORS.danger} />
+                    <Text style={{ color: COLORS.danger, fontSize: 12, fontWeight: '500' }} numberOfLines={1}>
+                      {voiceTranscript ? voiceTranscript : 'Listening...'}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={{ color: COLORS.textMuted, fontSize: 12 }}>Tap the mic to start talking</Text>
+                )}
               </View>
             )}
 
