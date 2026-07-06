@@ -47,6 +47,12 @@ export const enableNotifications = async () => {
   }
   if (finalStatus !== 'granted') return false;
 
+  // Since Expo SDK 53, Expo Go no longer supports remote push tokens at all — this call
+  // throws a cryptic native error there. Give a clear, actionable message instead.
+  if (Constants.appOwnership === 'expo') {
+    throw new Error('Notifications need a build of the Crackd app (EAS build or dev client) — they no longer work inside Expo Go.');
+  }
+
   const projectId = Constants.expoConfig?.extra?.eas?.projectId;
   const { data: token } = await Notif.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
 

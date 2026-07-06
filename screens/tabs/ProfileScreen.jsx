@@ -74,8 +74,9 @@ export default function ProfileScreen() {
         await disableNotifications();
         setNotifEnabled(false);
       }
-    } catch (_) {
-      showAlert('Error', 'Could not update notification settings. Please try again.');
+    } catch (e) {
+      const reason = e?.response?.data?.message || e?.response?.data || e?.message || 'Unknown error';
+      showAlert('Error', `Could not update notification settings.\n\n${reason}`);
     } finally {
       setNotifLoading(false);
     }
