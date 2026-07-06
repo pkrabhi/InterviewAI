@@ -51,7 +51,14 @@
           "speechRecognitionPermission": "Allow Crackd to recognise your speech for voice answers."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#6366F1"
+        }
+      ]
     ]
   }
 }

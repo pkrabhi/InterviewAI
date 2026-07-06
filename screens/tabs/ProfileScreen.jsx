@@ -13,6 +13,7 @@ import useAuthStore from '../../store/useAuthStore';
 import { logout }   from '../../services/authService';
 import { createPaymentOrder } from '../../services/paymentService';
 import { VERTICAL_SWIPE_STYLE } from '../../utils/webTouch';
+import { pushNotificationsSupported, enableNotifications, disableNotifications } from '../../services/notificationService';
 
 const showAlert = (title, msg) => {
   if (Platform.OS === 'web') window.alert(`${title}\n\n${msg}`);
@@ -23,6 +24,8 @@ export default function ProfileScreen() {
   const { user, logout: clearAuth } = useAuthStore();
   const { COLORS, isDark, toggleTheme } = useThemeStore();
   const [upgrading, setUpgrading] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
 
   const styles = useMemo(() => makeStyles(COLORS), [COLORS]);
 
@@ -48,6 +51,34 @@ export default function ProfileScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Logout', style: 'destructive', onPress: async () => { await logout(); clearAuth(); } },
     ]);
+  };
+
+  const handleToggleNotifications = async (value) => {
+    if (value && !pushNotificationsSupported) {
+      showAlert(
+        'Mobile app required',
+        'Push notifications need the Crackd mobile app installed on your phone — they aren\'t available on web or in a simulator.'
+      );
+      return;
+    }
+    setNotifLoading(true);
+    try {
+      if (value) {
+        const granted = await enableNotifications();
+        if (granted) {
+          setNotifEnabled(true);
+        } else {
+          showAlert('Permission needed', 'Enable notifications for Crackd in your device settings to turn this on.');
+        }
+      } else {
+        await disableNotifications();
+        setNotifEnabled(false);
+      }
+    } catch (_) {
+      showAlert('Error', 'Could not update notification settings. Please try again.');
+    } finally {
+      setNotifLoading(false);
+    }
   };
 
   const handleUpgrade = async () => {
@@ -120,8 +151,27 @@ export default function ProfileScreen() {
         {/* Account */}
         <Text style={styles.sectionLabel}>Account</Text>
         <GlassCard style={styles.menuCard} intensity={18}>
-          <MenuItem icon="bell-outline" label="Notifications" subtitle="Interview reminders & updates"
-            onPress={() => showAlert('Notifications', 'Push notifications coming in the next update!')} />
+          <View style={styles.menuItem}>
+            <View style={styles.menuIconWrap}>
+              <MaterialCommunityIcons name="bell-outline" size={18} color={COLORS.textMuted} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.menuLabel}>Notifications</Text>
+              <Text style={styles.menuSub}>
+                {pushNotificationsSupported ? 'Report ready, unfinished interviews & daily reminders' : 'Available in the mobile app'}
+              </Text>
+            </View>
+            {notifLoading ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <Switch
+                value={notifEnabled}
+                onValueChange={handleToggleNotifications}
+                trackColor={{ false: COLORS.border, true: COLORS.accent + 'AA' }}
+                thumbColor={notifEnabled ? COLORS.accent : COLORS.textMuted}
+              />
+            )}
+          </View>
           <MenuItem icon="shield-check-outline" label="Privacy Policy" subtitle="How we handle your data"
             onPress={() => showAlert('Privacy', 'Crackd does not share your data with third parties.')} />
           <MenuItem icon="information-outline" label="About" subtitle="Crackd v1.0.0"

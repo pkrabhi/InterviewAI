@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider }    from 'react-native-safe-area-context';
 import { StatusBar }           from 'expo-status-bar';
@@ -13,8 +13,24 @@ import useAuthStore    from './store/useAuthStore';
 import useThemeStore   from './store/useThemeStore';
 import WebAppShell     from './components/WebAppShell';
 import { getUser, getToken } from './services/authService';
+import { onNotificationTapped } from './services/notificationService';
 
 const AuthStack = createStackNavigator();
+const navigationRef = createNavigationContainerRef();
+
+// Routes a tapped notification to the relevant screen. Only "report_ready" carries enough
+// info (a sessionId) to deep-link directly; the others just surface the tab where the user
+// can act, since resuming a session needs its full role/level/type/length context.
+function handleNotificationTap(data) {
+  if (!navigationRef.isReady()) return;
+  if (data.type === 'report_ready' && data.sessionId) {
+    navigationRef.navigate('InterviewReport', { sessionId: data.sessionId });
+  } else if (data.type === 'resume_interview') {
+    navigationRef.navigate('MainTabs', { screen: 'History' });
+  } else if (data.type === 'daily_reminder') {
+    navigationRef.navigate('MainTabs', { screen: 'Home' });
+  }
+}
 
 export default function App() {
   const { isLoggedIn, isLoading, setUser, setLoading } = useAuthStore();
@@ -31,6 +47,7 @@ export default function App() {
       finally { setLoading(false); }
     };
     init();
+    return onNotificationTapped(handleNotificationTap);
   }, []);
 
   if (isLoading) {
@@ -45,7 +62,7 @@ export default function App() {
     <WebAppShell bgColor={COLORS.bg}>
     <SafeAreaProvider>
       <StatusBar style="light" backgroundColor={COLORS.bg} />
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         {isLoggedIn ? (
           <AppNavigator />
         ) : (
