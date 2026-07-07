@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import HomeScreen    from '../screens/tabs/HomeScreen';
 import HistoryScreen from '../screens/tabs/HistoryScreen';
+import LearnScreen   from '../screens/tabs/LearnScreen';
 import ProfileScreen from '../screens/tabs/ProfileScreen';
 import { COLORS }   from '../constants/theme';
 
@@ -30,6 +31,7 @@ export default function TabNavigator() {
           const icons = {
             Home:    'home',
             History: 'history',
+            Learn:   'school',
             Profile: 'account-circle',
           };
           return (
@@ -44,6 +46,7 @@ export default function TabNavigator() {
     >
       <Tab.Screen name="Home"    component={HomeScreen}    />
       <Tab.Screen name="History" component={HistoryScreen} />
+      <Tab.Screen name="Learn"   component={LearnScreen}   />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

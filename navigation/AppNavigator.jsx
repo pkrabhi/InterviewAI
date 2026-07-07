@@ -7,6 +7,7 @@ import TabNavigator    from './TabNavigator';
 import SetupScreen     from '../screens/interview/SetupScreen';
 import SessionScreen   from '../screens/interview/SessionScreen';
 import ReportScreen    from '../screens/interview/ReportScreen';
+import LearningSessionScreen from '../screens/learning/LearningSessionScreen';
 import { COLORS }      from '../constants/theme';
 
 const Stack = createStackNavigator();
@@ -52,6 +53,11 @@ export default function AppNavigator() {
         name="InterviewSession"
         component={SessionScreen}
         options={{ title: 'Interview', headerShown: false }}
+      />
+      <Stack.Screen
+        name="LearningSession"
+        component={LearningSessionScreen}
+        options={{ title: 'Learn', headerShown: false }}
       />
       <Stack.Screen
         name="InterviewReport"
